@@ -1,12 +1,9 @@
 MODEL:
   PRETRAIN_CHOICE: 'imagenet'
-  PRETRAIN_PATH: '/home/haoluo/.torch/models/resnet50-19c8e357.pth'
+  PRETRAIN_PATH: '/home/matthew/.cache/torch/hub/checkpoints/resnet50-0676ba61.pth'
   METRIC_LOSS_TYPE: 'triplet_center'
   IF_LABELSMOOTH: 'on'
   IF_WITH_CENTER: 'yes'
-
-
-
 
 INPUT:
   SIZE_TRAIN: [256, 128]
@@ -21,7 +18,7 @@ DATASETS:
 DATALOADER:
   SAMPLER: 'softmax_triplet'
   NUM_INSTANCE: 4
-  NUM_WORKERS: 8
+  NUM_WORKERS: 4
 
 SOLVER:
   OPTIMIZER_NAME: 'Adam'
@@ -42,7 +39,7 @@ SOLVER:
   BIAS_LR_FACTOR: 1
   WEIGHT_DECAY: 0.0005
   WEIGHT_DECAY_BIAS: 0.0005
-  IMS_PER_BATCH: 64
+  IMS_PER_BATCH: 16
 
   STEPS: [40, 70]
   GAMMA: 0.1
@@ -62,6 +59,6 @@ TEST:
   NECK_FEAT: 'after'
   FEAT_NORM: 'yes'
 
-OUTPUT_DIR: "/home/haoluo/log/gu/reid_baseline_review/Opensource_test/market1501/Experiment-all-tricks-tri_center-256x128-bs16x4-warmup10-erase0_5-labelsmooth_on-laststride1-bnneck_on-triplet_centerloss0_0005"
+OUTPUT_DIR: "/home/matthew/outputs/Experiment-all-tricks-tri_center-256x128-bs16x4-warmup10-erase0_5-labelsmooth_on-laststride1-bnneck_on-triplet_centerloss0_0005"
 
 
