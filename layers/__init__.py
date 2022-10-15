@@ -68,21 +68,29 @@ def make_loss_with_center(cfg, num_classes):    # modified by gu
     def loss_func(score, feat, target):
         if cfg.MODEL.METRIC_LOSS_TYPE == 'center':
             if cfg.MODEL.IF_LABELSMOOTH == 'on':
-                return xent(score, target) + \
-                        cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)
+                loss_classification = xent(score, target)
+                # return xent(score, target) + \
+                #         cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)
             else:
-                return F.cross_entropy(score, target) + \
-                        cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)
+                loss_classification = F.cross_entropy(score, target)
+                # return F.cross_entropy(score, target) + \
+                #         cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)
+            loss_center = cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)
+            total = loss_classification + loss_center
+            return total, loss_classification, loss_center
 
         elif cfg.MODEL.METRIC_LOSS_TYPE == 'triplet_center':
             if cfg.MODEL.IF_LABELSMOOTH == 'on':
-                return xent(score, target) + \
-                        triplet(feat, target)[0] + \
-                        cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)
+                loss_classification = xent(score, target)
             else:
-                return F.cross_entropy(score, target) + \
-                        triplet(feat, target)[0] + \
-                        cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)
+                loss_classification = F.cross_entropy(score, target)
+                # return F.cross_entropy(score, target) + \
+                #         triplet(feat, target)[0] + \
+                #         cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)
+            loss_triplet = triplet(feat, target)[0]
+            loss_center = cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion
+            loss_total = loss_classification + loss_triplet + loss_center
+            return loss_total, loss_classification, loss_triplet, loss_center
 
         else:
             print('expected METRIC_LOSS_TYPE with center should be center, triplet_center'

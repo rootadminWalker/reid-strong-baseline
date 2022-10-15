@@ -23,8 +23,8 @@ def build_transforms(cfg, is_train=True):
         ])
     else:
         transform = T.Compose([
-            T.Resize(cfg.INPUT.SIZE_TEST),
             T.ToTensor(),
+            T.Resize(cfg.INPUT.SIZE_TEST),
             normalize_transform
         ])
 
