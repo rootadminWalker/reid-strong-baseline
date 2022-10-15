@@ -6,7 +6,7 @@
 
 import torch.nn.functional as F
 
-from .triplet_loss import TripletLoss, CrossEntropyLabelSmooth
+from .triplet_loss import TripletLoss, CrossEntropyLabelSmooth, AdMSoftmaxLabelsSmooth
 from .center_loss import CenterLoss
 
 
@@ -55,38 +55,48 @@ def make_loss_with_center(cfg, num_classes):    # modified by gu
     else:
         feat_dim = 2048
 
-    center_criterion = CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)  # center loss
-    # if cfg.MODEL.METRIC_LOSS_TYPE == 'center':
-    #     center_criterion = CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)  # center loss
+    assert cfg.MODEL.METRIC_LOSS_TYPE in ['center', 'triplet_center', 'am_triplet_center'], '''
+            expected METRIC_LOSS_TYPE with center should be center, triplet_center, am_triplet_center'
+            'but got {}'''.format(cfg.MODEL.METRIC_LOSS_TYPE)
 
-    if cfg.MODEL.METRIC_LOSS_TYPE == 'triplet_center':
+    # center_criterion = CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)  # center loss
+    if 'center' in cfg.MODEL.METRIC_LOSS_TYPE:
+        center_criterion = CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)  # center loss
+    if 'triplet' in cfg.MODEL.METRIC_LOSS_TYPE:
     # elif cfg.MODEL.METRIC_LOSS_TYPE == 'triplet_center':
         triplet = TripletLoss(cfg.SOLVER.MARGIN)  # triplet loss
         # center_criterion = CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)  # center loss
 
-    else:
-        print('expected METRIC_LOSS_TYPE with center should be center, triplet_center'
-              'but got {}'.format(cfg.MODEL.METRIC_LOSS_TYPE))
-
     if cfg.MODEL.IF_LABELSMOOTH == 'on':
-        xent = CrossEntropyLabelSmooth(num_classes=num_classes)     # new add by luo
-        print("label smooth on, numclasses:", num_classes)
+        if cfg.MODEL.METRIC_LOSS_TYPE == 'am_triplet_center':
+            xent = AdMSoftmaxLabelsSmooth(num_classes=num_classes)
+        else:
+            xent = CrossEntropyLabelSmooth(num_classes=num_classes)     # new add by luo
+        print("label smooth on, ", end='')
+    else:
+        if cfg.MODEL.METRIC_LOSS_TYPE == 'am_triplet_center':
+            xent = AdMSoftmaxLabelsSmooth(num_classes=num_classes, epsilon=0)
+        else:
+            xent = F.cross_entropy
+    print("numclasses:", num_classes)
 
     def loss_func(score, feat, target):
         loss_center = cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)
         if cfg.MODEL.METRIC_LOSS_TYPE == 'center':
-            if cfg.MODEL.IF_LABELSMOOTH == 'on':
-                loss_classification = xent(score, target)
-            else:
-                loss_classification = F.cross_entropy(score, target)
+            # if cfg.MODEL.IF_LABELSMOOTH == 'on':
+            #     loss_classification = xent(score, target)
+            # else:
+            #     loss_classification = F.cross_entropy(score, target)
+            loss_classification = xent(score, target)
             loss_total = loss_classification + loss_center
             return loss_total, loss_classification, loss_center
 
         elif cfg.MODEL.METRIC_LOSS_TYPE == 'triplet_center':
-            if cfg.MODEL.IF_LABELSMOOTH == 'on':
-                loss_classification = xent(score, target)
-            else:
-                loss_classification = F.cross_entropy(score, target)
+            # if cfg.MODEL.IF_LABELSMOOTH == 'on':
+            #     loss_classification = xent(score, target)
+            # else:
+            #     loss_classification = F.cross_entropy(score, target)
+            loss_classification = xent(score, target)
             loss_triplet = triplet(feat, target)[0]
             loss_total = loss_classification + loss_triplet + loss_center
             return loss_total, loss_classification, loss_center, loss_triplet 
