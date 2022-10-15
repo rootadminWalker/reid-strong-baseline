@@ -88,7 +88,7 @@ def make_loss_with_center(cfg, num_classes):    # modified by gu
                 #         triplet(feat, target)[0] + \
                 #         cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)
             loss_triplet = triplet(feat, target)[0]
-            loss_center = cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion
+            loss_center = cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)
             loss_total = loss_classification + loss_triplet + loss_center
             return loss_total, loss_classification, loss_triplet, loss_center
 
