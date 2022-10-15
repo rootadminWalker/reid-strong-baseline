@@ -82,21 +82,22 @@ def make_loss_with_center(cfg, num_classes):    # modified by gu
 
     def loss_func(score, feat, target):
         loss_center = cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)
+        loss_classification = xent(score, target)
         if cfg.MODEL.METRIC_LOSS_TYPE == 'center':
             # if cfg.MODEL.IF_LABELSMOOTH == 'on':
             #     loss_classification = xent(score, target)
             # else:
             #     loss_classification = F.cross_entropy(score, target)
-            loss_classification = xent(score, target)
+            # loss_classification = xent(score, target)
             loss_total = loss_classification + loss_center
             return loss_total, loss_classification, loss_center
 
-        elif cfg.MODEL.METRIC_LOSS_TYPE == 'triplet_center':
+        elif 'triplet_center' in cfg.MODEL.METRIC_LOSS_TYPE:
             # if cfg.MODEL.IF_LABELSMOOTH == 'on':
             #     loss_classification = xent(score, target)
             # else:
             #     loss_classification = F.cross_entropy(score, target)
-            loss_classification = xent(score, target)
+            # loss_classification = xent(score, target)
             loss_triplet = triplet(feat, target)[0]
             loss_total = loss_classification + loss_triplet + loss_center
             return loss_total, loss_classification, loss_center, loss_triplet 
