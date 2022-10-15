@@ -25,16 +25,21 @@ def make_loss(cfg, num_classes):    # modified by gu
     if sampler == 'softmax':
         def loss_func(score, feat, target):
             return F.cross_entropy(score, target)
-    elif cfg.DATALOADER.SAMPLER == 'triplet':
+    elif sampler == 'triplet':
         def loss_func(score, feat, target):
             return triplet(feat, target)[0]
-    elif cfg.DATALOADER.SAMPLER == 'softmax_triplet':
+    elif sampler == 'softmax_triplet':
         def loss_func(score, feat, target):
             if cfg.MODEL.METRIC_LOSS_TYPE == 'triplet':
+                loss_triplet = triplet(feat, target)[0]
                 if cfg.MODEL.IF_LABELSMOOTH == 'on':
-                    return xent(score, target) + triplet(feat, target)[0]
+                    # return xent(score, target) + triplet(feat, target)[0]
+                    loss_classification = xent(score, target)
                 else:
-                    return F.cross_entropy(score, target) + triplet(feat, target)[0]
+                    # return F.cross_entropy(score, target) + triplet(feat, target)[0]
+                    loss_classification = F.cross_entropy(score, target)
+                loss_total = loss_classification + loss_triplet
+                return loss_total, loss_classification, loss_triplet
             else:
                 print('expected METRIC_LOSS_TYPE should be triplet'
                       'but got {}'.format(cfg.MODEL.METRIC_LOSS_TYPE))
@@ -50,12 +55,14 @@ def make_loss_with_center(cfg, num_classes):    # modified by gu
     else:
         feat_dim = 2048
 
-    if cfg.MODEL.METRIC_LOSS_TYPE == 'center':
-        center_criterion = CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)  # center loss
+    center_criterion = CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)  # center loss
+    # if cfg.MODEL.METRIC_LOSS_TYPE == 'center':
+    #     center_criterion = CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)  # center loss
 
-    elif cfg.MODEL.METRIC_LOSS_TYPE == 'triplet_center':
+    if cfg.MODEL.METRIC_LOSS_TYPE == 'triplet_center':
+    # elif cfg.MODEL.METRIC_LOSS_TYPE == 'triplet_center':
         triplet = TripletLoss(cfg.SOLVER.MARGIN)  # triplet loss
-        center_criterion = CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)  # center loss
+        # center_criterion = CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)  # center loss
 
     else:
         print('expected METRIC_LOSS_TYPE with center should be center, triplet_center'
@@ -66,31 +73,23 @@ def make_loss_with_center(cfg, num_classes):    # modified by gu
         print("label smooth on, numclasses:", num_classes)
 
     def loss_func(score, feat, target):
+        loss_center = cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)
         if cfg.MODEL.METRIC_LOSS_TYPE == 'center':
             if cfg.MODEL.IF_LABELSMOOTH == 'on':
                 loss_classification = xent(score, target)
-                # return xent(score, target) + \
-                #         cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)
             else:
                 loss_classification = F.cross_entropy(score, target)
-                # return F.cross_entropy(score, target) + \
-                #         cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)
-            loss_center = cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)
-            total = loss_classification + loss_center
-            return total, loss_classification, loss_center
+            loss_total = loss_classification + loss_center
+            return loss_total, loss_classification, loss_center
 
         elif cfg.MODEL.METRIC_LOSS_TYPE == 'triplet_center':
             if cfg.MODEL.IF_LABELSMOOTH == 'on':
                 loss_classification = xent(score, target)
             else:
                 loss_classification = F.cross_entropy(score, target)
-                # return F.cross_entropy(score, target) + \
-                #         triplet(feat, target)[0] + \
-                #         cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)
             loss_triplet = triplet(feat, target)[0]
-            loss_center = cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)
             loss_total = loss_classification + loss_triplet + loss_center
-            return loss_total, loss_classification, loss_triplet, loss_center
+            return loss_total, loss_classification, loss_center, loss_triplet 
 
         else:
             print('expected METRIC_LOSS_TYPE with center should be center, triplet_center'

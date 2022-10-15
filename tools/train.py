@@ -131,11 +131,15 @@ def main():
     if args.config_file != "":
         cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
-    cfg.freeze()
 
     output_dir = cfg.OUTPUT_DIR
+    tb_logs_path = os.path.join(output_dir, 'tb_logs')
+    cfg.merge_from_list(["TB_LOG_DIR", f"('{tb_logs_path}')"])
+    cfg.freeze()
+    
     if output_dir and not os.path.exists(output_dir):
         os.makedirs(output_dir)
+        os.makedirs(tb_logs_path)
 
     logger = setup_logger("reid_baseline", output_dir, 0)
     logger.info("Using {} GPUS".format(num_gpus))

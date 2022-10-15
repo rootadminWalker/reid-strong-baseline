@@ -5,12 +5,14 @@
 """
 
 import logging
+from tabnanny import check
 
 import torch
 import torch.nn as nn
 from ignite.engine import Engine, Events
 from ignite.handlers import ModelCheckpoint, Timer
 from ignite.metrics import RunningAverage
+from ignite.contrib.handlers.tensorboard_logger import TensorboardLogger, OutputHandler, global_step_from_engine
 
 from utils.reid_metric import R1_mAP
 
@@ -38,18 +40,24 @@ def create_supervised_trainer(model, optimizer, loss_fn,
         model.to(device)
 
     def _update(engine, batch):
+        loss_components = []
         model.train()
         optimizer.zero_grad()
         img, target = batch
         img = img.to(device) if torch.cuda.device_count() >= 1 else img
         target = target.to(device) if torch.cuda.device_count() >= 1 else target
         score, feat = model(img)
-        loss = loss_fn(score, feat, target)
-        loss.backward()
+        losses = loss_fn(score, feat, target)
+        if isinstance(losses, tuple):
+            total_loss, *loss_components = losses
+        else:
+            total_loss = losses
+
+        total_loss.backward()
         optimizer.step()
         # compute acc
         acc = (score.max(1)[1] == target).float().mean()
-        return loss.item(), acc.item()
+        return {'total_loss': total_loss.item(), 'acc': acc.item(), 'loss_components': loss_components}
 
     return Engine(_update)
 
@@ -75,6 +83,7 @@ def create_supervised_trainer_with_center(model, center_criterion, optimizer, op
         model.to(device)
 
     def _update(engine, batch):
+        loss_components = []
         model.train()
         optimizer.zero_grad()
         optimizer_center.zero_grad()
@@ -82,7 +91,11 @@ def create_supervised_trainer_with_center(model, center_criterion, optimizer, op
         img = img.to(device) if torch.cuda.device_count() >= 1 else img
         target = target.to(device) if torch.cuda.device_count() >= 1 else target
         score, feat = model(img)
-        total_loss, *component_losses = loss_fn(score, feat, target)
+        losses = loss_fn(score, feat, target)
+        if isinstance(losses, tuple):
+            total_loss, *loss_components = losses
+        else:
+            total_loss = losses
         # print("Total loss is {}, center loss is {}".format(loss, center_criterion(feat, target)))
         total_loss.backward()
         optimizer.step()
@@ -92,7 +105,7 @@ def create_supervised_trainer_with_center(model, center_criterion, optimizer, op
 
         # compute acc
         acc = (score.max(1)[1] == target).float().mean()
-        return total_loss.item(), acc.item()
+        return {'total_loss': total_loss.item(), 'acc': acc.item(), 'loss_components': loss_components}
 
     return Engine(_update)
 
@@ -153,17 +166,20 @@ def do_train(
     logger.info("Start training")
     trainer = create_supervised_trainer(model, optimizer, loss_fn, device=device)
     evaluator = create_supervised_evaluator(model, metrics={'r1_mAP': R1_mAP(num_query, max_rank=50, feat_norm=cfg.TEST.FEAT_NORM)}, device=device)
-    checkpointer = ModelCheckpoint(output_dir, cfg.MODEL.NAME, checkpoint_period, n_saved=10, require_empty=False)
+    checkpointer = ModelCheckpoint(output_dir, cfg.MODEL.NAME, n_saved=10, require_empty=False)
     timer = Timer(average=True)
 
-    trainer.add_event_handler(Events.EPOCH_COMPLETED, checkpointer, {'model': model,
+    trainer.add_event_handler(Events.EPOCH_COMPLETED(every=checkpoint_period), checkpointer, {'model': model,
                                                                      'optimizer': optimizer})
     timer.attach(trainer, start=Events.EPOCH_STARTED, resume=Events.ITERATION_STARTED,
                  pause=Events.ITERATION_COMPLETED, step=Events.ITERATION_COMPLETED)
 
     # average metric to attach on trainer
-    RunningAverage(output_transform=lambda x: x[0]).attach(trainer, 'avg_loss')
-    RunningAverage(output_transform=lambda x: x[1]).attach(trainer, 'avg_acc')
+    RunningAverage(output_transform=lambda x: x['total_loss']).attach(trainer, 'avg_loss')
+    RunningAverage(output_transform=lambda x: x['acc']).attach(trainer, 'avg_acc')
+    if cfg.DATALOADER.SAMPLER == 'softmax_triplet':
+        RunningAverage(output_transform=lambda x: x['loss_components'][0]).attach(trainer, 'avg_id_loss')
+        RunningAverage(output_transform=lambda x: x['loss_components'][1]).attach(trainer, 'avg_triplet_loss')
 
     @trainer.on(Events.STARTED)
     def start_training(engine):
@@ -179,9 +195,12 @@ def do_train(
         ITER += 1
 
         if ITER % log_period == 0:
-            logger.info("Epoch[{}] Iteration[{}/{}] Loss: {:.3f}, Acc: {:.3f}, Base Lr: {:.2e}"
+            id_triplet_text = ""
+            if cfg.DATALOADER.SAMPLER == 'softmax_triplet':
+                id_triplet_text = f"ID Loss: {engine.state.metrics['avg_id_loss']:.3f}, Triplet Loss: {engine.state.metrics['avg_triplet_loss']:.3f}, "
+            logger.info("Epoch[{}] Iteration[{}/{}] Loss: {:.3f}, {}Acc: {:.3f}, Base Lr: {:.2e}"
                         .format(engine.state.epoch, ITER, len(train_loader),
-                                engine.state.metrics['avg_loss'], engine.state.metrics['avg_acc'],
+                                engine.state.metrics['avg_loss'], id_triplet_text, engine.state.metrics['avg_acc'],
                                 scheduler.get_lr()[0]))
         if len(train_loader) == ITER:
             ITER = 0
@@ -232,10 +251,11 @@ def do_train_with_center(
     logger.info("Start training")
     trainer = create_supervised_trainer_with_center(model, center_criterion, optimizer, optimizer_center, loss_fn, cfg.SOLVER.CENTER_LOSS_WEIGHT, device=device)
     evaluator = create_supervised_evaluator(model, metrics={'r1_mAP': R1_mAP(num_query, max_rank=50, feat_norm=cfg.TEST.FEAT_NORM)}, device=device)
-    checkpointer = ModelCheckpoint(output_dir, cfg.MODEL.NAME, checkpoint_period, n_saved=10, require_empty=False, save_as_state_dict=True)
+    checkpointer = ModelCheckpoint(output_dir, cfg.MODEL.NAME, n_saved=10, require_empty=False)
+    tb_logger = TensorboardLogger(log_dir=cfg.TB_LOG_DIR)
     timer = Timer(average=True)
 
-    trainer.add_event_handler(Events.EPOCH_COMPLETED, checkpointer, {'model': model,
+    trainer.add_event_handler(Events.EPOCH_COMPLETED(every=checkpoint_period), checkpointer, {'model': model,
                                                                      'optimizer': optimizer,
                                                                      'center_param': center_criterion,
                                                                      'optimizer_center': optimizer_center})
@@ -244,8 +264,20 @@ def do_train_with_center(
                  pause=Events.ITERATION_COMPLETED, step=Events.ITERATION_COMPLETED)
 
     # average metric to attach on trainer
-    RunningAverage(output_transform=lambda x: x[0]).attach(trainer, 'avg_loss')
-    RunningAverage(output_transform=lambda x: x[1]).attach(trainer, 'avg_acc')
+    RunningAverage(output_transform=lambda x: x['total_loss']).attach(trainer, 'avg_loss')
+    RunningAverage(output_transform=lambda x: x['acc']).attach(trainer, 'avg_acc')
+    RunningAverage(output_transform=lambda x: x['loss_components'][0]).attach(trainer, 'avg_id_loss')
+    RunningAverage(output_transform=lambda x: x['loss_components'][1]).attach(trainer, 'avg_center_loss')
+    if cfg.MODEL.METRIC_LOSS_TYPE == 'triplet_center':
+        RunningAverage(output_transform=lambda x: x['loss_components'][2]).attach(trainer, 'avg_triplet_loss')
+
+    tb_logger.attach_output_handler(
+        trainer,
+        tag="training",
+        metric_names=['avg_loss', 'avg_acc', 'avg_id_loss', 'avg_center_loss', 'avg_triplet_loss'],
+        event_name=Events.ITERATION_COMPLETED
+    )
+
 
     @trainer.on(Events.STARTED)
     def start_training(engine):
@@ -261,9 +293,14 @@ def do_train_with_center(
         ITER += 1
 
         if ITER % log_period == 0:
-            logger.info("Epoch[{}] Iteration[{}/{}] Loss: {:.3f}, Acc: {:.3f}, Base Lr: {:.2e}"
+            triplet_text = ''
+            if cfg.MODEL.METRIC_LOSS_TYPE == 'triplet_center':
+                triplet_text = f"Triplet Loss: {engine.state.metrics['avg_triplet_loss']:.3f}, "
+
+            logger.info("Epoch[{}] Iteration[{}/{}] Total Loss: {:.3f}, ID Loss: {:.3f}, Center Loss: {:.3f}, {}Acc: {:.3f}, Base Lr: {:.2e}"
                         .format(engine.state.epoch, ITER, len(train_loader),
-                                engine.state.metrics['avg_loss'], engine.state.metrics['avg_acc'],
+                                engine.state.metrics['avg_loss'], engine.state.metrics['avg_id_loss'], engine.state.metrics['avg_center_loss'], triplet_text,
+                                engine.state.metrics['avg_acc'],
                                 scheduler.get_lr()[0]))
         if len(train_loader) == ITER:
             ITER = 0

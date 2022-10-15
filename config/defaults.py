@@ -159,3 +159,4 @@ _C.TEST.FEAT_NORM = 'yes'
 # ---------------------------------------------------------------------------- #
 # Path to checkpoint and saved log of trained model
 _C.OUTPUT_DIR = ""
+_C.TB_LOG_DIR = ""
