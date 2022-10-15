@@ -175,7 +175,7 @@ def do_train(
                  pause=Events.ITERATION_COMPLETED, step=Events.ITERATION_COMPLETED)
 
     # average metric to attach on trainer
-    RunningAverage(output_transform=lambda x: x['total_loss']).attach(trainer, 'avg_loss')
+    RunningAverage(output_transform=lambda x: x['total_loss']).attach(trainer, 'avg_total_loss')
     RunningAverage(output_transform=lambda x: x['acc']).attach(trainer, 'avg_acc')
     if cfg.DATALOADER.SAMPLER == 'softmax_triplet':
         RunningAverage(output_transform=lambda x: x['loss_components'][0]).attach(trainer, 'avg_id_loss')
@@ -200,7 +200,7 @@ def do_train(
                 id_triplet_text = f"ID Loss: {engine.state.metrics['avg_id_loss']:.3f}, Triplet Loss: {engine.state.metrics['avg_triplet_loss']:.3f}, "
             logger.info("Epoch[{}] Iteration[{}/{}] Loss: {:.3f}, {}Acc: {:.3f}, Base Lr: {:.2e}"
                         .format(engine.state.epoch, ITER, len(train_loader),
-                                engine.state.metrics['avg_loss'], id_triplet_text, engine.state.metrics['avg_acc'],
+                                engine.state.metrics['avg_total_loss'], id_triplet_text, engine.state.metrics['avg_acc'],
                                 scheduler.get_lr()[0]))
         if len(train_loader) == ITER:
             ITER = 0
@@ -264,7 +264,7 @@ def do_train_with_center(
                  pause=Events.ITERATION_COMPLETED, step=Events.ITERATION_COMPLETED)
 
     # average metric to attach on trainer
-    RunningAverage(output_transform=lambda x: x['total_loss']).attach(trainer, 'avg_loss')
+    RunningAverage(output_transform=lambda x: x['total_loss']).attach(trainer, 'avg_total_loss')
     RunningAverage(output_transform=lambda x: x['acc']).attach(trainer, 'avg_acc')
     RunningAverage(output_transform=lambda x: x['loss_components'][0]).attach(trainer, 'avg_id_loss')
     RunningAverage(output_transform=lambda x: x['loss_components'][1]).attach(trainer, 'avg_center_loss')
@@ -274,7 +274,7 @@ def do_train_with_center(
     tb_logger.attach_output_handler(
         trainer,
         tag="training",
-        metric_names=['avg_loss', 'avg_acc', 'avg_id_loss', 'avg_center_loss', 'avg_triplet_loss'],
+        metric_names=['avg_total_loss', 'avg_acc', 'avg_id_loss', 'avg_center_loss', 'avg_triplet_loss'],
         event_name=Events.ITERATION_COMPLETED
     )
 
@@ -299,7 +299,7 @@ def do_train_with_center(
 
             logger.info("Epoch[{}] Iteration[{}/{}] Total Loss: {:.3f}, ID Loss: {:.3f}, Center Loss: {:.3f}, {}Acc: {:.3f}, Base Lr: {:.2e}"
                         .format(engine.state.epoch, ITER, len(train_loader),
-                                engine.state.metrics['avg_loss'], engine.state.metrics['avg_id_loss'], engine.state.metrics['avg_center_loss'], triplet_text,
+                                engine.state.metrics['avg_total_loss'], engine.state.metrics['avg_id_loss'], engine.state.metrics['avg_center_loss'], triplet_text,
                                 engine.state.metrics['avg_acc'],
                                 scheduler.get_lr()[0]))
         if len(train_loader) == ITER:
