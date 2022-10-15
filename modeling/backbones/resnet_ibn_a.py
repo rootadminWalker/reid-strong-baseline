@@ -142,6 +142,13 @@ class ResNet_IBN(nn.Module):
 
     def load_param(self, model_path):
         param_dict = torch.load(model_path)
+        self._load_param(param_dict)
+        # for i in param_dict:
+        #     if 'fc' in i:
+        #         continue
+        #     self.state_dict()[i].copy_(param_dict[i])
+
+    def _load_param(self, param_dict):
         for i in param_dict:
             if 'fc' in i:
                 continue
@@ -155,7 +162,7 @@ def resnet50_ibn_a(last_stride, pretrained=False, **kwargs):
     """
     model = ResNet_IBN(last_stride, Bottleneck_IBN, [3, 4, 6, 3], **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
+        model._load_param(model_zoo.load_url(model_urls['resnet50']))
     return model
 
 
