@@ -117,68 +117,10 @@ class TripletLoss(object):
         return loss, dist_ap, dist_an
 
 
-class CrossEntropyLabelSmooth(nn.Module):
-    """Cross entropy loss with label smoothing regularizer.
-
-    Reference:
-    Szegedy et al. Rethinking the Inception Architecture for Computer Vision. CVPR 2016.
-    Equation: y = (1 - epsilon) * y + epsilon / K.
-
-    Args:
-        num_classes (int): number of classes.
-        epsilon (float): weight.
-    """
-
-    def __init__(self, num_classes, epsilon=0.1, use_gpu=True):
-        super(CrossEntropyLabelSmooth, self).__init__()
-        self.num_classes = num_classes
-        self.epsilon = epsilon
-        self.use_gpu = use_gpu
-        self.logsoftmax = nn.LogSoftmax(dim=1)
-
-    def forward(self, inputs, targets):
-        """
-        Args:
-            inputs: prediction matrix (before softmax) with shape (batch_size, num_classes)
-            targets: ground truth labels with shape (num_classes)
-        """
-        log_probs = self.logsoftmax(inputs)
-        targets = torch.zeros(log_probs.size()).scatter_(1, targets.unsqueeze(1).data.cpu(), 1)
-        if self.use_gpu: targets = targets.cuda()
-        targets = (1 - self.epsilon) * targets + self.epsilon / self.num_classes
-        loss = (- targets * log_probs).mean(0).sum()
-        return loss
-
-
-class AdMSoftmaxLabelsSmooth(nn.Module):
-
-    def __init__(self, num_classes, s=10.0, m=0.5, epsilon=0.1, use_gpu=True):
-        '''
-        AM Softmax Loss
-        Original code by Leethony@github.com
-        '''
-        super(AdMSoftmaxLabelsSmooth, self).__init__()
-        self.s = s
-        self.m = m
-        self.epsilon = epsilon
-        self.use_gpu = use_gpu
-        self.num_classes = num_classes
-
-    def forward(self, x, targets):
-        '''
-        input shape (N, in_features)
-        '''
-        assert len(x) == len(targets)
-        assert torch.min(targets) >= 0
-        assert torch.max(targets) < self.num_classes
-
-        # Smooth the labels
-        if self.use_gpu:
-            targets = targets.cuda()
-        targets = (1 - self.epsilon) * targets + self.epsilon / self.num_classes
-
-        numerator = self.s * (torch.diagonal(x.transpose(0, 1)[targets]) - self.m)
-        excl = torch.cat([torch.cat((x[i, :y], x[i, y + 1:])).unsqueeze(0) for i, y in enumerate(targets)], dim=0)
-        denominator = torch.exp(numerator) + torch.sum(torch.exp(self.s * excl), dim=1)
-        L = numerator - torch.log(denominator)
-        return -torch.mean(L)
+if __name__ == '__main__':
+    batch_size = 16
+    loss_fn = TripletLoss(margin=0.3)
+    logit = torch.rand(batch_size, 256)
+    label = torch.tensor([4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7])
+    loss, ap, an = loss_fn(logit, label)
+    print(loss, ap, an)

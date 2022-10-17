@@ -165,7 +165,7 @@ class Baseline(nn.Module):
 
         if self.training:
             if self.norm_classifier_w:
-                feat = F.normalize(feat, dim=1)
+                feat = F.normalize(feat, p=2, dim=1)
                 with torch.no_grad():
                     self.classifier.weight.div_(torch.norm(self.classifier.weight, dim=1, keepdim=True))
             cls_score = self.classifier(feat)

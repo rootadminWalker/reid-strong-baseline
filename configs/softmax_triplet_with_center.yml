@@ -1,7 +1,7 @@
 MODEL:
   PRETRAIN_CHOICE: 'imagenet'
   PRETRAIN_PATH: '/home/matthew/.cache/torch/hub/checkpoints/resnet50-0676ba61.pth'
-  METRIC_LOSS_TYPE: 'triplet_center'
+  METRIC_LOSS_TYPE: 'am_triplet_center'
   IF_LABELSMOOTH: 'on'
   IF_WITH_CENTER: 'yes'
 
@@ -51,6 +51,9 @@ SOLVER:
   CHECKPOINT_PERIOD: 20
   LOG_PERIOD: 20
   EVAL_PERIOD: 40
+
+  AM_S: 30
+  AM_M: 0.35
 
 TEST:
   IMS_PER_BATCH: 128

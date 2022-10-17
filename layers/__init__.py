@@ -6,7 +6,8 @@
 
 import torch.nn.functional as F
 
-from .triplet_loss import TripletLoss, CrossEntropyLabelSmooth, AdMSoftmaxLabelsSmooth
+from .triplet_loss import TripletLoss
+from .id_loss import CrossEntropyLabelSmooth, AdMSoftmaxLabelsSmooth
 from .center_loss import CenterLoss
 
 
@@ -69,7 +70,7 @@ def make_loss_with_center(cfg, num_classes):    # modified by gu
 
     if cfg.MODEL.IF_LABELSMOOTH == 'on':
         if cfg.MODEL.METRIC_LOSS_TYPE == 'am_triplet_center':
-            xent = AdMSoftmaxLabelsSmooth(num_classes=num_classes)
+            xent = AdMSoftmaxLabelsSmooth(s=cfg.SOLVER.AM_S, m=cfg.SOLVER.AM_M, num_classes=num_classes)
         else:
             xent = CrossEntropyLabelSmooth(num_classes=num_classes)     # new add by luo
         print("label smooth on, ", end='')

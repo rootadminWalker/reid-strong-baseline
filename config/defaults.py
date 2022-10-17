@@ -140,6 +140,10 @@ _C.SOLVER.EVAL_PERIOD = 50
 # see 2 images per batch
 _C.SOLVER.IMS_PER_BATCH = 64
 
+# Hyperparameter s and m of AM-softmax
+_C.SOLVER.AM_S = 30
+_C.SOLVER.AM_M = 0.35
+
 # This is global, so if we have 8 GPUs and IMS_PER_BATCH = 16, each GPU will
 # see 2 images per batch
 _C.TEST = CN()

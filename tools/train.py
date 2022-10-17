@@ -134,7 +134,7 @@ def main():
 
     output_dir = cfg.OUTPUT_DIR
     tb_logs_path = os.path.join(output_dir, 'tb_logs')
-    cfg.merge_from_list(["TB_LOG_DIR", f"('{tb_logs_path}')"])
+    cfg.TB_LOG_DIR = tb_logs_path
     cfg.freeze()
     
     if output_dir and not os.path.exists(output_dir):
