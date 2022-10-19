@@ -36,6 +36,9 @@ class CrossEntropyLabelSmooth(nn.Module):
 
 
 class AMSoftmaxLoss(nn.Module):
+    """
+    Original code by ppriyank@github.com
+    """
     def __init__(self, s=30, m=0.35, num_classes=625, use_gpu=True, epsilon=0.1):
         super(AMSoftmaxLoss, self).__init__()
         self.s = s

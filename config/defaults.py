@@ -91,6 +91,8 @@ _C.SOLVER = CN()
 _C.SOLVER.OPTIMIZER_NAME = "Adam"
 # Number of max epoches
 _C.SOLVER.MAX_EPOCHS = 50
+# Start Epoch of the Model
+_C.SOLVER.START_EPOCH = 1
 # Base learning rate
 _C.SOLVER.BASE_LR = 3e-4
 # Factor of learning bias
@@ -99,6 +101,10 @@ _C.SOLVER.BIAS_LR_FACTOR = 2
 _C.SOLVER.MOMENTUM = 0.9
 # Margin of triplet loss
 _C.SOLVER.MARGIN = 0.3
+# Epsilon of the ID loss
+_C.SOLVER.ID_EPSILON = 0.1
+# Margin of Centroid Triplet Loss
+# _C.SOLVER.CTL_MARGIN = 0.05
 # Margin of cluster ;pss
 _C.SOLVER.CLUSTER_MARGIN = 0.3
 # Learning rate of SGD to learn the centers of center loss
@@ -106,11 +112,11 @@ _C.SOLVER.CENTER_LR = 0.5
 # Balanced weight of center loss
 _C.SOLVER.CENTER_LOSS_WEIGHT = 0.0005
 # Settings of range loss
-_C.SOLVER.RANGE_K = 2
-_C.SOLVER.RANGE_MARGIN = 0.3
-_C.SOLVER.RANGE_ALPHA = 0
-_C.SOLVER.RANGE_BETA = 1
-_C.SOLVER.RANGE_LOSS_WEIGHT = 1
+# _C.SOLVER.RANGE_K = 2
+# _C.SOLVER.RANGE_MARGIN = 0.3
+# _C.SOLVER.RANGE_ALPHA = 0
+# _C.SOLVER.RANGE_BETA = 1
+# _C.SOLVER.RANGE_LOSS_WEIGHT = 1
 
 # Settings of weight decay
 _C.SOLVER.WEIGHT_DECAY = 0.0005

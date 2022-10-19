@@ -268,8 +268,10 @@ def do_train_with_center(
     RunningAverage(output_transform=lambda x: x['acc']).attach(trainer, 'avg_acc')
     RunningAverage(output_transform=lambda x: x['loss_components'][0]).attach(trainer, 'avg_id_loss')
     RunningAverage(output_transform=lambda x: x['loss_components'][1]).attach(trainer, 'avg_center_loss')
-    if cfg.MODEL.METRIC_LOSS_TYPE == 'triplet_center':
+    if 'triplet_center' in cfg.MODEL.METRIC_LOSS_TYPE:
         RunningAverage(output_transform=lambda x: x['loss_components'][2]).attach(trainer, 'avg_triplet_loss')
+    if 'CTL' in cfg.MODEL.METRIC_LOSS_TYPE:
+        RunningAverage(output_transform=lambda x: x['loss_components'][3]).attach(trainer, 'avg_ctl_loss')
 
     tb_logger.attach_output_handler(
         trainer,
@@ -294,12 +296,15 @@ def do_train_with_center(
 
         if ITER % log_period == 0:
             triplet_text = ''
-            if cfg.MODEL.METRIC_LOSS_TYPE == 'triplet_center':
+            ctl_text = ''
+            if 'triplet_center' in cfg.MODEL.METRIC_LOSS_TYPE:
                 triplet_text = f"Triplet Loss: {engine.state.metrics['avg_triplet_loss']:.3f}, "
-
-            logger.info("Epoch[{}] Iteration[{}/{}] Total Loss: {:.3f}, ID Loss: {:.3f}, Center Loss: {:.3f}, {}Acc: {:.3f}, Base Lr: {:.2e}"
+            if 'CTL' in cfg.MODEL.METRIC_LOSS_TYPE:
+                ctl_text = f"CTL Loss: {engine.state.metrics['avg_ctl_loss']:.3f}, "
+                
+            logger.info("Epoch[{}] Iteration[{}/{}] Total Loss: {:.3f}, ID Loss: {:.3f}, Center Loss: {:.3f}, {}{}Acc: {:.3f}, Base Lr: {:.2e}"
                         .format(engine.state.epoch, ITER, len(train_loader),
-                                engine.state.metrics['avg_total_loss'], engine.state.metrics['avg_id_loss'], engine.state.metrics['avg_center_loss'], triplet_text,
+                                engine.state.metrics['avg_total_loss'], engine.state.metrics['avg_id_loss'], engine.state.metrics['avg_center_loss'], triplet_text, ctl_text,
                                 engine.state.metrics['avg_acc'],
                                 scheduler.get_lr()[0]))
         if len(train_loader) == ITER:
