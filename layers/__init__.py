@@ -6,8 +6,9 @@
 
 import torch.nn.functional as F
 from pytorch_metric_learning.losses import CentroidTripletLoss
+from pytorch_metric_learning.reducers import DoNothingReducer
 
-from .triplet_loss import TripletLoss
+from .triplet_loss import TripletLoss, EuclideanDistance
 from .id_loss import CrossEntropyLabelSmooth, AMSoftmaxLoss
 from .center_loss import CenterLoss
 
@@ -69,7 +70,8 @@ def make_loss_with_center(cfg, num_classes):    # modified by gu
         triplet = TripletLoss(cfg.SOLVER.MARGIN)  # triplet loss
         # center_criterion = CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)  # center loss
     if 'CTL' in cfg.MODEL.METRIC_LOSS_TYPE:
-        ctl = CentroidTripletLoss(margin=cfg.SOLVER.MARGIN)
+        distance = EuclideanDistance()
+        ctl = CentroidTripletLoss(margin=cfg.SOLVER.MARGIN, distance=distance, reducer=DoNothingReducer())
 
     if cfg.MODEL.IF_LABELSMOOTH == 'on':
         if 'am' in cfg.MODEL.METRIC_LOSS_TYPE:
@@ -83,6 +85,7 @@ def make_loss_with_center(cfg, num_classes):    # modified by gu
         else:
             xent = F.cross_entropy
     print("numclasses:", num_classes)
+    print(xent)
 
     def loss_func(score, feat, target):
         loss_center = cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)

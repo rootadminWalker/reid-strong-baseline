@@ -3,8 +3,10 @@
 @author:  liaoxingyu
 @contact: sherlockliao01@gmail.com
 """
+from lib2to3.pytree import Base
 import torch
 from torch import nn
+from pytorch_metric_learning.distances import BaseDistance
 import torch.nn.functional as F
 
 
@@ -89,6 +91,17 @@ def hard_example_mining(dist_mat, labels, return_inds=False):
         return dist_ap, dist_an, p_inds, n_inds
 
     return dist_ap, dist_an
+
+
+class EuclideanDistance(BaseDistance):
+  def __init__(self, normalize_embeddings=True, p=2, power=1, is_inverted=False):
+    super(EuclideanDistance, self).__init__(normalize_embeddings, p, power, is_inverted)
+
+  def compute_mat(self, query_emb, ref_emb):
+      return self.pairwise_distance(query_emb, ref_emb)
+
+  def pairwise_distance(self, query_emb, ref_emb):
+      return euclidean_dist(query_emb, ref_emb)
 
 
 class TripletLoss(object):
