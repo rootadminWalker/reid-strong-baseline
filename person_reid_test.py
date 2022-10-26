@@ -6,16 +6,16 @@ from dataclasses import dataclass
 import cv2 as cv
 import rospy
 import torch
+from PIL import Image
 from cv_bridge import CvBridge
 from home_robot_msgs.msg import ObjectBoxes
 from torch.backends import cudnn
 from torchinfo import summary
 
-import utils
 from config import cfg
+from data.transforms import build_transforms
 from modeling import build_model
 from utils.logger import setup_logger
-from data.transforms import build_transforms
 
 
 @dataclass
@@ -72,10 +72,10 @@ def main(args):
     cudnn.benchmark = True
 
     model = build_model(cfg, 751)
-    model.load_param('/media/root_walker/DATA/outputs/resnet50_model_final.pth')
+    # model.load_param('/tmp/baseLR_0.00035/resnet50_ibn_a_checkpoint_89160.pt')
     model.eval()
     model.to(device)
-    summary(model, input_size=(1, 3, *cfg.MODEL.SIZE_TRAIN))
+    summary(model, input_size=(1, 3, *cfg.INPUT.SIZE_TRAIN))
 
     transforms = build_transforms(cfg, is_train=False)
 
@@ -90,7 +90,7 @@ def main(args):
     rospy.wait_for_message(box_topic, ObjectBoxes)
 
     __isCaptured = False
-    init_data = InitData(None, None)
+    init_datas = []
 
     while not rospy.is_shutdown():
         boxes = get_box()
@@ -102,11 +102,15 @@ def main(args):
             person_boxes = keep_only_person_boxes(boxes.boxes)
             for person_box in person_boxes:
                 crop_image = bridge.compressed_imgmsg_to_cv2(person_box.source_img)
+                crop_image = Image.fromarray(crop_image)
                 blob = transforms(crop_image).to(device).unsqueeze(0)
-                embedding = model(blob)
-                dist = calc_euclidean(embedding, init_data.init_vector)
-                print(dist)
-                if dist <= 450:
+                embedding = model(blob).detach()
+                front_dist = calc_euclidean(embedding, init_datas[0].init_vector) * 100
+                back_dist = calc_euclidean(embedding, init_datas[1].init_vector) * 100
+                # dist = F.cosine_similarity(embedding, init_data.init_vector)
+                yes = front_dist <= 0.5 or back_dist <= 0.5
+                print(front_dist, back_dist)
+                if yes:
                     color = (32, 255, 0)
                 else:
                     color = (32, 0, 255)
@@ -121,10 +125,14 @@ def main(args):
         elif key == ord('c'):
             rx, ry, rw, rh = cv.selectROI('test', frame)
             init_image = frame[ry:ry + rh, rx:rx + rw, :].copy()
+            init_image = Image.fromarray(init_image)
             blob = transforms(init_image).to(device).unsqueeze(0)
+            init_data = InitData(None, None)
             init_data.init_image = blob
-            init_data.init_vector = model(blob)
-            __isCaptured = True
+            init_data.init_vector = model(blob).detach()
+            init_datas.append(init_data)
+            if len(init_datas) >= 2:
+                __isCaptured = True
 
 
 if __name__ == '__main__':
