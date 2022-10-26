@@ -62,16 +62,17 @@ def make_loss_with_center(cfg, num_classes):    # modified by gu
             expected METRIC_LOSS_TYPE with center should be center, triplet_center, am_triplet_center'
             'but got {}'''.format(cfg.MODEL.METRIC_LOSS_TYPE)
 
-    # center_criterion = CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)  # center loss
+    print("Criterions: ")
     if 'center' in cfg.MODEL.METRIC_LOSS_TYPE:
         center_criterion = CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)  # center loss
+        print(center_criterion)
     if 'triplet' in cfg.MODEL.METRIC_LOSS_TYPE:
-    # elif cfg.MODEL.METRIC_LOSS_TYPE == 'triplet_center':
         triplet = TripletLoss(cfg.SOLVER.MARGIN)  # triplet loss
-        # center_criterion = CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)  # center loss
+        print(triplet)
     if 'CTL' in cfg.MODEL.METRIC_LOSS_TYPE:
         distance = EuclideanDistance()
         ctl = CentroidTripletLoss(margin=cfg.SOLVER.MARGIN, distance=distance, reducer=DoNothingReducer())
+        print(ctl)
 
     if cfg.MODEL.IF_LABELSMOOTH == 'on':
         if 'am' in cfg.MODEL.METRIC_LOSS_TYPE:
@@ -84,27 +85,17 @@ def make_loss_with_center(cfg, num_classes):    # modified by gu
             xent = AMSoftmaxLoss(num_classes=num_classes, epsilon=0)
         else:
             xent = F.cross_entropy
-    print("numclasses:", num_classes)
     print(xent)
+    print("numclasses:", num_classes)
 
     def loss_func(score, feat, target):
         loss_center = cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)
         loss_classification = xent(score, target)
         if cfg.MODEL.METRIC_LOSS_TYPE == 'center':
-            # if cfg.MODEL.IF_LABELSMOOTH == 'on':
-            #     loss_classification = xent(score, target)
-            # else:
-            #     loss_classification = F.cross_entropy(score, target)
-            # loss_classification = xent(score, target)
             loss_total = loss_classification + loss_center
             return loss_total, loss_classification, loss_center
 
         elif 'triplet_center' in cfg.MODEL.METRIC_LOSS_TYPE:
-            # if cfg.MODEL.IF_LABELSMOOTH == 'on':
-            #     loss_classification = xent(score, target)
-            # else:
-            #     loss_classification = F.cross_entropy(score, target)
-            # loss_classification = xent(score, target)
             loss_triplet = triplet(feat, target)[0]
             if 'CTL' in cfg.MODEL.METRIC_LOSS_TYPE:
                 loss_ctl = ctl(feat, target)

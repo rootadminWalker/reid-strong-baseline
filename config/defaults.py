@@ -150,6 +150,9 @@ _C.SOLVER.IMS_PER_BATCH = 64
 _C.SOLVER.AM_S = 30
 _C.SOLVER.AM_M = 0.35
 
+# Whether to use AugMix
+_C.SOLVER.USE_AUGMIX = False
+
 # This is global, so if we have 8 GPUs and IMS_PER_BATCH = 16, each GPU will
 # see 2 images per batch
 _C.TEST = CN()
