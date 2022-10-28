@@ -5,6 +5,7 @@
 """
 
 import logging
+import os
 from tabnanny import check
 
 import torch
@@ -246,6 +247,8 @@ def do_train_with_center(
     output_dir = cfg.OUTPUT_DIR
     device = cfg.MODEL.DEVICE
     epochs = cfg.SOLVER.MAX_EPOCHS
+    best_mAP = 0
+    best_rank1 = 0
 
     logger = logging.getLogger("reid_baseline.train")
     logger.info("Start training")
@@ -321,9 +324,17 @@ def do_train_with_center(
 
     @trainer.on(Events.EPOCH_COMPLETED)
     def log_validation_results(engine):
+        global best_mAP,best_rank1,  model
         if engine.state.epoch % eval_period == 0:
             evaluator.run(val_loader)
             cmc, mAP = evaluator.state.metrics['r1_mAP']
+            if mAP > best_mAP:
+                logger.info("Current epoch has the best mAP score, saving checkpoint")
+                torch.save(model, os.path.join(cfg.OUTPUT_DIR, f"{cfg.MODEL.NAME}_best_mAP_{engine.state.epoch}.pt"))
+            if cmc[0] > best_rank1:
+                logger.info("Current epoch has the best rank1 score, saving checkpoint")
+                torch.save(model, os.path.join(cfg.OUTPUT_DIR, f"{cfg.MODEL.NAME}_best_rank1_{engine.state.epoch}.pt"))
+
             logger.info("Validation Results - Epoch: {}".format(engine.state.epoch))
             logger.info("mAP: {:.1%}".format(mAP))
             for r in [1, 5, 10]:
