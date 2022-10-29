@@ -65,21 +65,21 @@ def make_loss_with_center(cfg, num_classes):    # modified by gu
     print("Criterions: ")
     if 'center' in cfg.MODEL.METRIC_LOSS_TYPE:
         center_criterion = CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)  # center loss
-        print(center_criterion)
+        print('\t', center_criterion)
     if 'triplet' in cfg.MODEL.METRIC_LOSS_TYPE:
         triplet = TripletLoss(cfg.SOLVER.MARGIN)  # triplet loss
-        print(triplet)
+        print('\t', triplet)
     if 'CTL' in cfg.MODEL.METRIC_LOSS_TYPE:
         distance = EuclideanDistance()
         ctl = CentroidTripletLoss(margin=cfg.SOLVER.MARGIN, distance=distance, reducer=DoNothingReducer())
-        print(ctl)
+        print('\t', ctl)
 
     if cfg.MODEL.IF_LABELSMOOTH == 'on':
         if 'am' in cfg.MODEL.METRIC_LOSS_TYPE:
             xent = AMSoftmaxLoss(s=cfg.SOLVER.AM_S, m=cfg.SOLVER.AM_M, num_classes=num_classes, epsilon=cfg.SOLVER.ID_EPSILON)
         else:
             xent = CrossEntropyLabelSmooth(num_classes=num_classes, epsilon=cfg.SOLVER.ID_EPSILON)     # new add by luo
-        print("label smooth on, ", end='')
+        print("\tlabel smooth on, ", end='')
     else:
         if 'am' in cfg.MODEL.METRIC_LOSS_TYPE:
             xent = AMSoftmaxLoss(num_classes=num_classes, epsilon=0)
