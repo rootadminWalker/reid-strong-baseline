@@ -19,6 +19,8 @@ from utils.reid_metric import R1_mAP
 
 global ITER
 ITER = 0
+best_mAP = 0
+best_rank1 = 0
 
 def create_supervised_trainer(model, optimizer, loss_fn,
                               device=None):
@@ -247,8 +249,6 @@ def do_train_with_center(
     output_dir = cfg.OUTPUT_DIR
     device = cfg.MODEL.DEVICE
     epochs = cfg.SOLVER.MAX_EPOCHS
-    best_mAP = 0
-    best_rank1 = 0
 
     logger = logging.getLogger("reid_baseline.train")
     logger.info("Start training")
@@ -282,6 +282,14 @@ def do_train_with_center(
         metric_names=['avg_total_loss', 'avg_acc', 'avg_id_loss', 'avg_center_loss', 'avg_triplet_loss'],
         event_name=Events.ITERATION_COMPLETED
     )
+
+
+    def save_best_checkpoint(epoch, best_metric_name, epoch_test_results):
+        torch.save({
+            "model": model,
+            "epoch": epoch,
+            "epoch_test_results": epoch_test_results
+        }, os.path.join(cfg.OUTPUT_DIR, f"{cfg.MODEL.NAME}_best_{best_metric_name}.pt"))
 
 
     @trainer.on(Events.STARTED)
@@ -324,20 +332,32 @@ def do_train_with_center(
 
     @trainer.on(Events.EPOCH_COMPLETED)
     def log_validation_results(engine):
-        global best_mAP,best_rank1,  model
+        global best_mAP, best_rank1
         if engine.state.epoch % eval_period == 0:
             evaluator.run(val_loader)
             cmc, mAP = evaluator.state.metrics['r1_mAP']
-            if mAP > best_mAP:
-                logger.info("Current epoch has the best mAP score, saving checkpoint")
-                torch.save(model, os.path.join(cfg.OUTPUT_DIR, f"{cfg.MODEL.NAME}_best_mAP_{engine.state.epoch}.pt"))
-            if cmc[0] > best_rank1:
-                logger.info("Current epoch has the best rank1 score, saving checkpoint")
-                torch.save(model, os.path.join(cfg.OUTPUT_DIR, f"{cfg.MODEL.NAME}_best_rank1_{engine.state.epoch}.pt"))
-
             logger.info("Validation Results - Epoch: {}".format(engine.state.epoch))
             logger.info("mAP: {:.1%}".format(mAP))
             for r in [1, 5, 10]:
                 logger.info("CMC curve, Rank-{:<3}:{:.1%}".format(r, cmc[r - 1]))
+
+            epoch_test_result = {
+                'mAP': mAP,
+                'rank1': cmc[0],
+                'rank5': cmc[4],
+                'rank10': cmc[9]
+            }
+            if mAP > best_mAP:
+                best_mAP = mAP
+                logger.info("Current epoch has the best mAP score, saving checkpoint")
+                save_best_checkpoint(engine.state.epoch, 'mAP', epoch_test_result)
+            if cmc[0] > best_rank1:
+                best_rank1 = cmc[0]
+                logger.info("Current epoch has the best rank1 score, saving checkpoint")
+                save_best_checkpoint(engine.state.epoch, 'rank1', epoch_test_result)
+            else:
+                logging.info('No imporvement this epoch, not saving anything')
+            
+            print('-----------------------------------------------------')
 
     trainer.run(train_loader, max_epochs=epochs)
