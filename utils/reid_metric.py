@@ -19,6 +19,10 @@ class R1_mAP(Metric):
         self.max_rank = max_rank
         self.feat_norm = feat_norm
 
+        self.feats = []
+        self.pids = []
+        self.camids = []
+
     def reset(self):
         self.feats = []
         self.pids = []

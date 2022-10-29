@@ -6,14 +6,13 @@
 
 import logging
 import os
-from tabnanny import check
 
 import torch
 import torch.nn as nn
+from ignite.contrib.handlers.tensorboard_logger import TensorboardLogger
 from ignite.engine import Engine, Events
 from ignite.handlers import ModelCheckpoint, Timer
 from ignite.metrics import RunningAverage
-from ignite.contrib.handlers.tensorboard_logger import TensorboardLogger, OutputHandler, global_step_from_engine
 
 from utils.reid_metric import R1_mAP
 
@@ -21,6 +20,7 @@ global ITER
 ITER = 0
 best_mAP = 0
 best_rank1 = 0
+
 
 def create_supervised_trainer(model, optimizer, loss_fn,
                               device=None):
@@ -65,8 +65,9 @@ def create_supervised_trainer(model, optimizer, loss_fn,
     return Engine(_update)
 
 
-def create_supervised_trainer_with_center(model, center_criterion, optimizer, optimizer_center, loss_fn, cetner_loss_weight,
-                              device=None):
+def create_supervised_trainer_with_center(model, center_criterion, optimizer, optimizer_center, loss_fn,
+                                          cetner_loss_weight,
+                                          device=None):
     """
     Factory function for creating a trainer for supervised models
 
@@ -168,12 +169,13 @@ def do_train(
     logger = logging.getLogger("reid_baseline")
     logger.info("Start training")
     trainer = create_supervised_trainer(model, optimizer, loss_fn, device=device)
-    evaluator = create_supervised_evaluator(model, metrics={'r1_mAP': R1_mAP(num_query, max_rank=50, feat_norm=cfg.TEST.FEAT_NORM)}, device=device)
+    evaluator = create_supervised_evaluator(model, metrics={
+        'r1_mAP': R1_mAP(num_query, max_rank=50, feat_norm=cfg.TEST.FEAT_NORM)}, device=device)
     checkpointer = ModelCheckpoint(output_dir, cfg.MODEL.NAME, n_saved=10, require_empty=False)
     timer = Timer(average=True)
 
     trainer.add_event_handler(Events.EPOCH_COMPLETED(every=checkpoint_period), checkpointer, {'model': model,
-                                                                     'optimizer': optimizer})
+                                                                                              'optimizer': optimizer})
     timer.attach(trainer, start=Events.EPOCH_STARTED, resume=Events.ITERATION_STARTED,
                  pause=Events.ITERATION_COMPLETED, step=Events.ITERATION_COMPLETED)
 
@@ -203,7 +205,8 @@ def do_train(
                 id_triplet_text = f"ID Loss: {engine.state.metrics['avg_id_loss']:.3f}, Triplet Loss: {engine.state.metrics['avg_triplet_loss']:.3f}, "
             logger.info("Epoch[{}] Iteration[{}/{}] Loss: {:.3f}, {}Acc: {:.3f}, Base Lr: {:.2e}"
                         .format(engine.state.epoch, ITER, len(train_loader),
-                                engine.state.metrics['avg_total_loss'], id_triplet_text, engine.state.metrics['avg_acc'],
+                                engine.state.metrics['avg_total_loss'], id_triplet_text,
+                                engine.state.metrics['avg_acc'],
                                 scheduler.get_lr()[0]))
         if len(train_loader) == ITER:
             ITER = 0
@@ -252,16 +255,18 @@ def do_train_with_center(
 
     logger = logging.getLogger("reid_baseline")
     logger.info("Start training")
-    trainer = create_supervised_trainer_with_center(model, center_criterion, optimizer, optimizer_center, loss_fn, cfg.SOLVER.CENTER_LOSS_WEIGHT, device=device)
-    evaluator = create_supervised_evaluator(model, metrics={'r1_mAP': R1_mAP(num_query, max_rank=50, feat_norm=cfg.TEST.FEAT_NORM)}, device=device)
+    trainer = create_supervised_trainer_with_center(model, center_criterion, optimizer, optimizer_center, loss_fn,
+                                                    cfg.SOLVER.CENTER_LOSS_WEIGHT, device=device)
+    evaluator = create_supervised_evaluator(model, metrics={
+        'r1_mAP': R1_mAP(num_query, max_rank=50, feat_norm=cfg.TEST.FEAT_NORM)}, device=device)
     checkpointer = ModelCheckpoint(output_dir, cfg.MODEL.NAME, n_saved=10, require_empty=False)
     tb_logger = TensorboardLogger(log_dir=cfg.TB_LOG_DIR)
     timer = Timer(average=True)
 
     trainer.add_event_handler(Events.EPOCH_COMPLETED(every=checkpoint_period), checkpointer, {'model': model,
-                                                                     'optimizer': optimizer,
-                                                                     'center_param': center_criterion,
-                                                                     'optimizer_center': optimizer_center})
+                                                                                              'optimizer': optimizer,
+                                                                                              'center_param': center_criterion,
+                                                                                              'optimizer_center': optimizer_center})
 
     timer.attach(trainer, start=Events.EPOCH_STARTED, resume=Events.ITERATION_STARTED,
                  pause=Events.ITERATION_COMPLETED, step=Events.ITERATION_COMPLETED)
@@ -283,14 +288,12 @@ def do_train_with_center(
         event_name=Events.ITERATION_COMPLETED
     )
 
-
     def save_best_checkpoint(epoch, best_metric_name, epoch_test_results):
         torch.save({
             "model": model,
             "epoch": epoch,
             "epoch_test_results": epoch_test_results
         }, os.path.join(cfg.OUTPUT_DIR, f"{cfg.MODEL.NAME}_best_{best_metric_name}.pt"))
-
 
     @trainer.on(Events.STARTED)
     def start_training(engine):
@@ -312,12 +315,14 @@ def do_train_with_center(
                 triplet_text = f"Triplet Loss: {engine.state.metrics['avg_triplet_loss']:.3f}, "
             if 'CTL' in cfg.MODEL.METRIC_LOSS_TYPE:
                 ctl_text = f"CTL Loss: {engine.state.metrics['avg_ctl_loss']:.3f}, "
-                
-            logger.info("Epoch[{}] Iteration[{}/{}] Total Loss: {:.3f}, ID Loss: {:.3f}, Center Loss: {:.3f}, {}{}Acc: {:.3f}, Base Lr: {:.2e}"
-                        .format(engine.state.epoch, ITER, len(train_loader),
-                                engine.state.metrics['avg_total_loss'], engine.state.metrics['avg_id_loss'], engine.state.metrics['avg_center_loss'], triplet_text, ctl_text,
-                                engine.state.metrics['avg_acc'],
-                                scheduler.get_lr()[0]))
+
+            logger.info(
+                "Epoch[{}] Iteration[{}/{}] Total Loss: {:.3f}, ID Loss: {:.3f}, Center Loss: {:.3f}, {}{}Acc: {:.3f}, Base Lr: {:.2e}"
+                .format(engine.state.epoch, ITER, len(train_loader),
+                        engine.state.metrics['avg_total_loss'], engine.state.metrics['avg_id_loss'],
+                        engine.state.metrics['avg_center_loss'], triplet_text, ctl_text,
+                        engine.state.metrics['avg_acc'],
+                        scheduler.get_lr()[0]))
         if len(train_loader) == ITER:
             ITER = 0
 
@@ -359,5 +364,4 @@ def do_train_with_center(
                 logging.info('No imporvement this epoch, not saving anything')
             logger.info('-' * 10)
 
-                
     trainer.run(train_loader, max_epochs=epochs)
