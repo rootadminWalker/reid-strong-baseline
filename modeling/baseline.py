@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from torch import nn
 
 from .backbones.resnet import ResNet, BasicBlock, Bottleneck
-from .backbones.resnet_ibn_a import resnet50_ibn_a
+from .backbones.resnet_ibn_a import resnet50_ibn_a, resnet101_ibn_a
 from .backbones.senet import SENet, SEResNetBottleneck, SEBottleneck, SEResNeXtBottleneck
 
 
@@ -42,6 +42,7 @@ class Baseline(nn.Module):
     def __init__(self, num_classes, last_stride, model_path, neck, neck_feat, model_name, pretrain_choice,
                  norm_classifier_w=False):
         super(Baseline, self).__init__()
+        self.is_pretrain = pretrain_choice == 'imagenet'
         if model_name == 'resnet18':
             self.in_planes = 512
             self.base = ResNet(last_stride=last_stride,
@@ -128,10 +129,13 @@ class Baseline(nn.Module):
                               dropout_p=0.2,
                               last_stride=last_stride)
         elif model_name == 'resnet50_ibn_a':
-            self.base = resnet50_ibn_a(last_stride)
+            self.base = resnet50_ibn_a(last_stride, pretrained=self.is_pretrain)
+        elif model_name == 'resnet101_ibn_a':
+            self.base = resnet101_ibn_a(last_stride, pretrained=self.is_pretrain)
 
-        if pretrain_choice == 'imagenet':
-            self.base.load_param(model_path)
+        if self.is_pretrain:
+            # if len(model_path) > 0:
+            #     self.base.load_param(model_path)
             print('Loading pretrained ImageNet model......')
 
         self.gap = nn.AdaptiveAvgPool2d(1)
