@@ -1,12 +1,38 @@
+"""
+MIT License
+
+Copyright (c) 2017 Wei Yang
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+"""
+
 import math
 import warnings
 
 import torch
-import torch.nn as nn
+from torch import nn
+
+from .ibn_module import IBN
 
 __all__ = ['ResNet_IBN', 'resnet18_ibn_a', 'resnet34_ibn_a', 'resnet50_ibn_a', 'resnet101_ibn_a', 'resnet152_ibn_a',
            'resnet18_ibn_b', 'resnet34_ibn_b', 'resnet50_ibn_b', 'resnet101_ibn_b', 'resnet152_ibn_b']
-
 
 model_urls = {
     'resnet18_ibn_a': 'https://github.com/XingangPan/IBN-Net/releases/download/v1.0/resnet18_ibn_a-2f571257.pth',
@@ -18,23 +44,6 @@ model_urls = {
     'resnet50_ibn_b': 'https://github.com/XingangPan/IBN-Net/releases/download/v1.0/resnet50_ibn_b-9ca61e85.pth',
     'resnet101_ibn_b': 'https://github.com/XingangPan/IBN-Net/releases/download/v1.0/resnet101_ibn_b-c55f6dba.pth',
 }
-
-
-class IBN(nn.Module):
-    def __init__(self, planes):
-        super(IBN, self).__init__()
-        half1 = int(planes/2)
-        self.half = half1
-        half2 = planes - half1
-        self.IN = nn.InstanceNorm2d(half1, affine=True)
-        self.BN = nn.BatchNorm2d(half2)
-    
-    def forward(self, x):
-        split = torch.split(x, self.half, 1)
-        out1 = self.IN(split[0].contiguous())
-        out2 = self.BN(split[1].contiguous())
-        out = torch.cat((out1, out2), 1)
-        return out
 
 
 class BasicBlock_IBN(nn.Module):
@@ -125,7 +134,7 @@ class ResNet_IBN(nn.Module):
 
     def __init__(self,
                  last_stride,
-                 block, 
+                 block,
                  layers,
                  ibn_cfg=('a', 'a', 'a', None),
                  num_classes=1000):
@@ -142,7 +151,8 @@ class ResNet_IBN(nn.Module):
         self.layer1 = self._make_layer(block, 64, layers[0], ibn=ibn_cfg[0])
         self.layer2 = self._make_layer(block, 128, layers[1], ibn=ibn_cfg[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], ibn=ibn_cfg[2], stride=2)
-        self.layer4 = self._make_layer(block, 512, layers[3], ibn=ibn_cfg[3], stride=last_stride)
+        self.layer4 = self._make_layer(block, 512, layers[3], ibn=ibn_cfg[3],
+                                       stride=last_stride)  # Final conv block with last stride
         self.avgpool = nn.AvgPool2d(7)
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
@@ -170,7 +180,7 @@ class ResNet_IBN(nn.Module):
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
             layers.append(block(self.inplanes, planes,
-                                None if (ibn == 'b' and i < blocks-1) else ibn))
+                                None if (ibn == 'b' and i < blocks - 1) else ibn))
 
         return nn.Sequential(*layers)
 
@@ -233,6 +243,7 @@ def resnet50_ibn_a(last_stride, pretrained=False, **kwargs):
     """Constructs a ResNet-50-IBN-a model.
 
     Args:
+        last_stride (int): Last stride of the last conv block
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
     model = ResNet_IBN(last_stride=last_stride,
@@ -249,6 +260,7 @@ def resnet101_ibn_a(last_stride, pretrained=False, **kwargs):
     """Constructs a ResNet-101-IBN-a model.
 
     Args:
+        last_stride (int): Last stride of the last conv block
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
     model = ResNet_IBN(last_stride=last_stride,
