@@ -132,6 +132,8 @@ class Baseline(nn.Module):
             self.base = resnet50_ibn_a(last_stride, pretrained=self.is_pretrain)
         elif model_name == 'resnet101_ibn_a':
             self.base = resnet101_ibn_a(last_stride, pretrained=self.is_pretrain)
+        else:
+            raise ValueError(f"{model_name} is unavailable right now")
 
         if self.is_pretrain:
             # if len(model_path) > 0:

@@ -357,7 +357,6 @@ def do_train_with_center(
                 save_best_checkpoint(engine.state.epoch, 'rank1', epoch_test_result)
             else:
                 logging.info('No imporvement this epoch, not saving anything')
-            
-            print('-----------------------------------------------------')
 
+                
     trainer.run(train_loader, max_epochs=epochs)
