@@ -150,6 +150,9 @@ _C.SOLVER.IMS_PER_BATCH = 64
 _C.SOLVER.AM_S = 30
 _C.SOLVER.AM_M = 0.35
 
+# Whether to normalize the weights of the last layer, used for am softmax loss
+_C.SOLVER.NORM_CLASSIFIER_W = False
+
 # Whether to use AugMix
 _C.SOLVER.USE_AUGMIX = False
 
