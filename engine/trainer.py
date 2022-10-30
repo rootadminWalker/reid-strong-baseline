@@ -290,7 +290,7 @@ def do_train_with_center(
 
     def save_best_checkpoint(epoch, best_metric_name, epoch_test_results):
         torch.save({
-            "model": model,
+            "model": model.state_dict(),
             "epoch": epoch,
             "epoch_test_results": epoch_test_results
         }, os.path.join(cfg.OUTPUT_DIR, f"{cfg.MODEL.NAME}_best_{best_metric_name}.pt"))
