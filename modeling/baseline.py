@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from torch import nn
 
 from .backbones.resnet import ResNet, BasicBlock, Bottleneck
-from .backbones.resnet_ibn import resnet50_ibn_a, resnet101_ibn_a
+from .backbones.resnet_ibn_a import resnet50_ibn_a, resnet101_ibn_a
 from .backbones.senet import SENet, SEResNetBottleneck, SEBottleneck, SEResNeXtBottleneck
 
 
