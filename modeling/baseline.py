@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from torch import nn
 
 from .backbones.resnet import ResNet, BasicBlock, Bottleneck
-from .backbones.resnet_ibn import resnet50_ibn_a, resnet101_ibn_a
+from .backbones.resnet_ibn import resnet34_ibn_a, resnet50_ibn_a, resnet101_ibn_a
 from .backbones.senet import SENet, SEResNetBottleneck, SEBottleneck, SEResNeXtBottleneck
 
 
@@ -128,6 +128,8 @@ class Baseline(nn.Module):
                               reduction=16,
                               dropout_p=0.2,
                               last_stride=last_stride)
+        elif model_name == 'resnet34_ibn_a':
+            self.base = resnet34_ibn_a(last_stride, pretrained=self.is_pretrain)
         elif model_name == 'resnet50_ibn_a':
             self.base = resnet50_ibn_a(last_stride, pretrained=self.is_pretrain)
         elif model_name == 'resnet101_ibn_a':
