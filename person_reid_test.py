@@ -105,10 +105,10 @@ def main(args):
                 crop_image = Image.fromarray(crop_image)
                 blob = transforms(crop_image).to(device).unsqueeze(0)
                 embedding = model(blob).detach()
-                front_dist = calc_euclidean(embedding, init_datas[0].init_vector) * 100
-                back_dist = calc_euclidean(embedding, init_datas[1].init_vector) * 100
+                front_dist = calc_euclidean(embedding, init_datas[0].init_vector) / 100
+                back_dist = calc_euclidean(embedding, init_datas[1].init_vector) / 100
                 # dist = F.cosine_similarity(embedding, init_data.init_vector)
-                yes = front_dist <= 0.5 or back_dist <= 0.5
+                yes = front_dist <= 2.5 or back_dist <= 2.5
                 print(front_dist, back_dist)
                 if yes:
                     color = (32, 255, 0)

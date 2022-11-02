@@ -5,9 +5,9 @@
 """
 
 import glob
-import re
-
 import os.path as osp
+import re
+import warnings
 
 from .bases import BaseImageDataset
 
@@ -25,12 +25,20 @@ class Market1501(BaseImageDataset):
     """
     dataset_dir = 'market1501'
 
-    def __init__(self, root='/home/haoluo/data', verbose=True, **kwargs):
+    def __init__(self, root='/home/haoluo/data', verbose=True, aug_per_image=1, **kwargs):
         super(Market1501, self).__init__()
         self.dataset_dir = osp.join(root, self.dataset_dir)
         self.train_dir = osp.join(self.dataset_dir, 'bounding_box_train')
         self.query_dir = osp.join(self.dataset_dir, 'query')
         self.gallery_dir = osp.join(self.dataset_dir, 'bounding_box_test')
+
+        self.aug_per_image = aug_per_image
+        assert self.aug_per_image > 0, "This value should be an integer greater than 0"
+        if self.aug_per_image:
+            warnings.warn("""
+            Please use transforms that will generate different images each time,
+            Otherwise using this parameter will make the dataset generate <aug_per_image> same images each time
+            """, UserWarning)
 
         self._check_before_run()
 
@@ -73,7 +81,10 @@ class Market1501(BaseImageDataset):
         pid2label = {pid: label for label, pid in enumerate(pid_container)}
 
         dataset = []
-        for img_path in img_paths:
+        # for img_path in img_paths:
+        idx = 0
+        for idx in range(len(img_paths) * self.aug_per_image):
+            img_path = img_paths[idx // self.aug_per_image]
             pid, camid = map(int, pattern.search(img_path).groups())
             if pid == -1: continue  # junk images are just ignored
             assert 0 <= pid <= 1501  # pid == 0 means background

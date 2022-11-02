@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 
 from .collate_batch import train_collate_fn, val_collate_fn
 from .datasets import init_dataset, ImageDataset
-from .samplers import RandomIdentitySampler, RandomIdentitySampler_alignedreid  # New add by gu
+from .samplers import RandomIdentitySampler  # New add by gu
 from .transforms import build_transforms
 
 
@@ -17,13 +17,13 @@ def make_data_loader(cfg):
     val_transforms = build_transforms(cfg, is_train=False)
     num_workers = cfg.DATALOADER.NUM_WORKERS
     if len(cfg.DATASETS.NAMES) == 1:
-        dataset = init_dataset(cfg.DATASETS.NAMES, root=cfg.DATASETS.ROOT_DIR)
+        dataset = init_dataset(cfg.DATASETS.NAMES, root=cfg.DATASETS.ROOT_DIR, aug_per_image=cfg.SOLVER.AUG_PER_IMAGE)
     else:
         # TODO: add multi dataset to train
-        dataset = init_dataset(cfg.DATASETS.NAMES, root=cfg.DATASETS.ROOT_DIR)
+        dataset = init_dataset(cfg.DATASETS.NAMES, root=cfg.DATASETS.ROOT_DIR, aug_per_image=cfg.SOLVER.AUG_PER_IMAGE)
 
     num_classes = dataset.num_train_pids
-    train_set = ImageDataset(dataset.train, train_transforms)
+    train_set = ImageDataset(dataset.train, transform=train_transforms)
     if cfg.DATALOADER.SAMPLER == 'softmax':
         train_loader = DataLoader(
             train_set, batch_size=cfg.SOLVER.IMS_PER_BATCH, shuffle=True, num_workers=num_workers,
@@ -33,7 +33,7 @@ def make_data_loader(cfg):
         train_loader = DataLoader(
             train_set, batch_size=cfg.SOLVER.IMS_PER_BATCH,
             sampler=RandomIdentitySampler(dataset.train, cfg.SOLVER.IMS_PER_BATCH, cfg.DATALOADER.NUM_INSTANCE),
-            # sampler=RandomIdentitySampler_alignedreid(dataset.train, cfg.DATALOADER.NUM_INSTANCE),      # new add by gu
+            # sampler=RandomIdentitySampler_alignedreid(dataset.train, cfg.DATALOADER.NUM_INSTANCE),    # new add by gu
             num_workers=num_workers, collate_fn=train_collate_fn
         )
 

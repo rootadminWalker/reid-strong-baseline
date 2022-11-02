@@ -5,6 +5,7 @@
 """
 
 import os.path as osp
+import warnings
 
 from PIL import Image
 from torch.utils.data import Dataset
