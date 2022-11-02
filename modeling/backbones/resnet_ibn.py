@@ -224,13 +224,14 @@ def resnet18_ibn_a(pretrained=False, **kwargs):
     return model
 
 
-def resnet34_ibn_a(pretrained=False, **kwargs):
+def resnet34_ibn_a(last_stride, pretrained=False, **kwargs):
     """Constructs a ResNet-34-IBN-a model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet_IBN(block=BasicBlock_IBN,
+    model = ResNet_IBN(last_stride=last_stride,
+                       block=BasicBlock_IBN,
                        layers=[3, 4, 6, 3],
                        ibn_cfg=('a', 'a', 'a', None),
                        **kwargs)
