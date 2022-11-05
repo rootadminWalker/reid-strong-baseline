@@ -10,6 +10,7 @@ from torch import nn
 
 from .backbones.resnet import ResNet, BasicBlock, Bottleneck
 from .backbones.resnet_ibn import resnet34_ibn_a, resnet50_ibn_a, resnet101_ibn_a
+from .backbones.resnext_ibn import resnext101_ibn_a
 from .backbones.senet import SENet, SEResNetBottleneck, SEBottleneck, SEResNeXtBottleneck
 
 
@@ -134,6 +135,8 @@ class Baseline(nn.Module):
             self.base = resnet50_ibn_a(last_stride, pretrained=self.is_pretrain)
         elif model_name == 'resnet101_ibn_a':
             self.base = resnet101_ibn_a(last_stride, pretrained=self.is_pretrain)
+        elif model_name == 'resnext101_ibn_a':
+            self.base = resnext101_ibn_a(last_stride, pretrained=self.is_pretrain)
         else:
             raise ValueError(f"{model_name} is unavailable right now")
 
