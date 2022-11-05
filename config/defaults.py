@@ -157,7 +157,7 @@ _C.SOLVER.NORM_CLASSIFIER_W = False
 _C.SOLVER.USE_AUGMIX = False
 
 # n images to augment for each dataset image
-_C.SOLVER.N_AUG_PER_IMG = 1
+_C.SOLVER.AUG_PER_IMG = 1
 
 # This is global, so if we have 8 GPUs and IMS_PER_BATCH = 16, each GPU will
 # see 2 images per batch
