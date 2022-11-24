@@ -1,6 +1,7 @@
 import argparse
 import os
 from copy import deepcopy
+import torch.nn.functional as F
 from dataclasses import dataclass
 
 import cv2 as cv
@@ -107,9 +108,11 @@ def main(args):
                 embedding = model(blob).detach()
                 front_dist = calc_euclidean(embedding, init_datas[0].init_vector) / 100
                 back_dist = calc_euclidean(embedding, init_datas[1].init_vector) / 100
-                # dist = F.cosine_similarity(embedding, init_data.init_vector)
-                yes = front_dist <= 2.5 or back_dist <= 2.5
-                print(front_dist, back_dist)
+                front_dist1 = calc_euclidean(embedding, init_datas[2].init_vector) / 100
+                back_dist1 = calc_euclidean(embedding, init_datas[3].init_vector) / 100
+                threshold = 1.2
+                yes = front_dist <= threshold or back_dist <= threshold or front_dist1 <= threshold or back_dist1 <= threshold
+                print(front_dist, back_dist, front_dist1, back_dist1)
                 if yes:
                     color = (32, 255, 0)
                 else:
@@ -131,7 +134,7 @@ def main(args):
             init_data.init_image = blob
             init_data.init_vector = model(blob).detach()
             init_datas.append(init_data)
-            if len(init_datas) >= 2:
+            if len(init_datas) >= 4:
                 __isCaptured = True
 
 
