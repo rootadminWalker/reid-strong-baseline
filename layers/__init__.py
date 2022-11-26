@@ -8,12 +8,22 @@ import torch.nn.functional as F
 from pytorch_metric_learning.losses import CentroidTripletLoss
 from pytorch_metric_learning.reducers import DoNothingReducer
 
-from .triplet_loss import TripletLoss, EuclideanDistance
-from .id_loss import CrossEntropyLabelSmooth, AMSoftmaxLoss
 from .center_loss import CenterLoss
+from .id_loss import CrossEntropyLabelSmooth, AMSoftmaxLoss
+from .triplet_loss import TripletLoss, EuclideanDistance
+
+d_l = {'am': 0, 'CTL': 1, 'triplet': 2, 'center': 3}
 
 
-def make_loss(cfg, num_classes):    # modified by gu
+def check_loss_type_valid(loss_type_str):
+    s = loss_type_str.split('_')
+    for idx in range(len(s) - 1):
+        curr_ = d_l[s[idx]]
+        next_ = d_l[s[idx + 1]]
+        assert curr_ < next_, "You have the wrong format"
+
+
+def make_loss(cfg, num_classes):  # modified by gu
     sampler = cfg.DATALOADER.SAMPLER
     if cfg.MODEL.METRIC_LOSS_TYPE == 'triplet':
         triplet = TripletLoss(cfg.SOLVER.MARGIN)  # triplet loss
@@ -22,7 +32,7 @@ def make_loss(cfg, num_classes):    # modified by gu
               'but got {}'.format(cfg.MODEL.METRIC_LOSS_TYPE))
 
     if cfg.MODEL.IF_LABELSMOOTH == 'on':
-        xent = CrossEntropyLabelSmooth(num_classes=num_classes)     # new add by luo
+        xent = CrossEntropyLabelSmooth(num_classes=num_classes)  # new add by luo
         print("label smooth on, numclasses:", num_classes)
 
     if sampler == 'softmax':
@@ -52,15 +62,13 @@ def make_loss(cfg, num_classes):    # modified by gu
     return loss_func
 
 
-def make_loss_with_center(cfg, num_classes):    # modified by gu
+def make_loss_with_center(cfg, num_classes):  # modified by gu
     if cfg.MODEL.NAME == 'resnet18' or cfg.MODEL.NAME == 'resnet34':
         feat_dim = 512
     else:
         feat_dim = 2048
 
-    assert cfg.MODEL.METRIC_LOSS_TYPE in ['center', 'triplet_center', 'am_triplet_center', 'am_CTL_triplet_center', "CTL_triplet_center"], '''
-            expected METRIC_LOSS_TYPE with center should be center, triplet_center, am_triplet_center'
-            'but got {}'''.format(cfg.MODEL.METRIC_LOSS_TYPE)
+    check_loss_type_valid(cfg.MODEL.METRIC_LOSS_TYPE)
 
     print("Criterions: ")
     if 'center' in cfg.MODEL.METRIC_LOSS_TYPE:
@@ -76,9 +84,10 @@ def make_loss_with_center(cfg, num_classes):    # modified by gu
 
     if cfg.MODEL.IF_LABELSMOOTH == 'on':
         if 'am' in cfg.MODEL.METRIC_LOSS_TYPE:
-            xent = AMSoftmaxLoss(s=cfg.SOLVER.AM_S, m=cfg.SOLVER.AM_M, num_classes=num_classes, epsilon=cfg.SOLVER.ID_EPSILON)
+            xent = AMSoftmaxLoss(s=cfg.SOLVER.AM_S, m=cfg.SOLVER.AM_M, num_classes=num_classes,
+                                 epsilon=cfg.SOLVER.ID_EPSILON)
         else:
-            xent = CrossEntropyLabelSmooth(num_classes=num_classes, epsilon=cfg.SOLVER.ID_EPSILON)     # new add by luo
+            xent = CrossEntropyLabelSmooth(num_classes=num_classes, epsilon=cfg.SOLVER.ID_EPSILON)  # new add by luo
         print("\tlabel smooth on, ", end='')
     else:
         if 'am' in cfg.MODEL.METRIC_LOSS_TYPE:
@@ -103,9 +112,10 @@ def make_loss_with_center(cfg, num_classes):    # modified by gu
                 return loss_total, loss_classification, loss_center, loss_triplet, loss_ctl
             else:
                 loss_total = loss_classification + loss_triplet + loss_center
-                return loss_total, loss_classification, loss_center, loss_triplet 
+                return loss_total, loss_classification, loss_center, loss_triplet
 
         else:
             print('expected METRIC_LOSS_TYPE with center should be center, triplet_center'
                   'but got {}'.format(cfg.MODEL.METRIC_LOSS_TYPE))
+
     return loss_func, center_criterion

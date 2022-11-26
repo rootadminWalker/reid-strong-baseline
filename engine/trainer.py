@@ -14,12 +14,21 @@ from ignite.engine import Engine, Events
 from ignite.handlers import ModelCheckpoint, Timer
 from ignite.metrics import RunningAverage
 
+from data import make_data_loader
+from modeling import build_model
 from utils.reid_metric import R1_mAP
+from pytorch_lightning import LightningModule
 
 global ITER
 ITER = 0
 best_mAP = 0
 best_rank1 = 0
+
+
+class TrainModule(LightningModule):
+    def __init__(self, cfg, num_classes):
+        super(TrainModule, self).__init__()
+        self.model = build_model(cfg, num_classes)
 
 
 def create_supervised_trainer(model, optimizer, loss_fn,

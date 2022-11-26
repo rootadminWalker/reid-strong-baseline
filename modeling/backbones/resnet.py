@@ -8,6 +8,7 @@ import math
 
 import torch
 from torch import nn
+from torchvision import models
 
 
 def conv3x3(in_planes, out_planes, stride=1):
@@ -132,8 +133,8 @@ class ResNet(nn.Module):
 
         return x
 
-    def load_param(self, model_path):
-        param_dict = torch.load(model_path)
+    def load_param(self, param_dict):
+        # param_dict = torch.load(model_path)
         for i in param_dict:
             if 'fc' in i:
                 continue
@@ -148,3 +149,20 @@ class ResNet(nn.Module):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
 
+
+def resnet50(last_stride, pretrained=False):
+    model = ResNet(last_stride=last_stride,
+                   block=Bottleneck,
+                   layers=[3, 4, 6, 3])
+    if pretrained:
+        weights = models.resnet50(pretrained=True)
+        model.load_param(weights.state_dict())
+
+
+def resnet101(last_stride, pretrained=False):
+    model = ResNet(last_stride=last_stride,
+                   block=Bottleneck,
+                   layers=[3, 4, 23, 3])
+    if pretrained:
+        weights = models.resnet101(pretrained=True)
+        model.load_param(weights.state_dict())
