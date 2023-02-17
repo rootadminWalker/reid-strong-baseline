@@ -82,7 +82,7 @@ class Market1501(BaseImageDataset):
 
         dataset = []
         # for img_path in img_paths:
-        idx = 0
+        final_idx = 0
         for idx in range(len(img_paths) * self.aug_per_image):
             img_path = img_paths[idx // self.aug_per_image]
             pid, camid = map(int, pattern.search(img_path).groups())
