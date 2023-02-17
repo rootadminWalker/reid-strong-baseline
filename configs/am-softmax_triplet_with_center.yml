@@ -57,7 +57,7 @@ SOLVER:
   NORM_CLASSIFIER_W: True
 
 TEST:
-  IMS_PER_BATCH: 1
+  IMS_PER_BATCH: 128
   RE_RANKING: 'no'
   WEIGHT: "path"
   NECK_FEAT: 'after'
