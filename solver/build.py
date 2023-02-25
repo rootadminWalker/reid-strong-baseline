@@ -5,6 +5,7 @@
 """
 
 import torch
+from .lr_scheduler import WarmupLR
 
 
 def make_optimizer(cfg, model):
@@ -42,3 +43,28 @@ def make_optimizer_with_center(cfg, model, center_criterion):
         optimizer = getattr(torch.optim, cfg.SOLVER.OPTIMIZER_NAME)(params)
     optimizer_center = torch.optim.SGD(center_criterion.parameters(), lr=cfg.SOLVER.CENTER_LR)
     return optimizer, optimizer_center
+
+
+def build_scheduler(optimizer, cfg):
+    if cfg.SOLVER.LR_SCHEDULER_NAME == "cosine_annealing":
+        lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, cfg.SOLVER.MAX_EPOCHS, eta_min=cfg.SOLVER.MIN_LR
+        )
+    elif cfg.SOLVER.LR_SCHEDULER_NAME == "multistep_lr":
+        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+            optimizer, milestones=cfg.SOLVER.STEPS,
+            gamma=cfg.SOLVER.GAMMA
+        )
+    else:
+        raise NotImplementedError(f"No such scheduler {cfg.SOLVER.LR_SCHEDULER_NAME}")
+
+    return lr_scheduler
+
+
+def build_warmup_lr(cfg):
+    return WarmupLR(
+        base_lr=cfg.SOLVER.BASE_LR,
+        warmup_factor=cfg.SOLVER.WARMUP_FACTOR,
+        warmup_iters=cfg.SOLVER.WARMUP_ITERS,
+        warmup_method=cfg.SOLVER.WARMUP_METHOD
+    )

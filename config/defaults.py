@@ -13,14 +13,21 @@ from yacs.config import CfgNode as CN
 # -----------------------------------------------------------------------------
 # Config definition
 # -----------------------------------------------------------------------------
-
 _C = CN()
+
+# ---------------------------------------------------------------------------- #
+# Misc options
+# ---------------------------------------------------------------------------- #
+# Path to checkpoint and saved log of trained model
+_C.OUTPUT_DIR = ""
+_C.TB_LOG_DIR = ""
+_C.MODE = "train"
 
 _C.MODEL = CN()
 # Using cuda or cpu for training
-_C.MODEL.DEVICE = "cuda"
+_C.MODEL.DEVICE = "gpu"
 # ID number of GPU
-_C.MODEL.DEVICE_ID = '0'
+_C.MODEL.DEVICE_ID = "0"
 # Name of backbone
 _C.MODEL.NAME = 'resnet50'
 # Last stride of backbone
@@ -82,6 +89,12 @@ _C.DATALOADER.NUM_WORKERS = 8
 _C.DATALOADER.SAMPLER = 'softmax'
 # Number of instance for one batch
 _C.DATALOADER.NUM_INSTANCE = 16
+# Whether to use a fixed number for batches per epoch
+_C.DATALOADER.FIXED_BATCHES_PER_EPOCH = False
+# Times of doing sanity check if batches per epoch were fixed
+_C.DATALOADER.FIND_CORRECT_NUM_TIMES = 30
+# To use RGB color mode or not
+_C.DATALOADER.USE_RGB = False
 
 # ---------------------------------------------------------------------------- #
 # Solver
@@ -133,6 +146,8 @@ _C.SOLVER.WARMUP_FACTOR = 1.0 / 3
 _C.SOLVER.WARMUP_ITERS = 500
 # method of warm up, option: 'constant','linear'
 _C.SOLVER.WARMUP_METHOD = "linear"
+# LR scheduler name
+_C.SOLVER.LR_SCHEDULER_NAME = "multistep_lr"
 
 # epoch number of saving checkpoints
 _C.SOLVER.CHECKPOINT_PERIOD = 50
@@ -140,6 +155,8 @@ _C.SOLVER.CHECKPOINT_PERIOD = 50
 _C.SOLVER.LOG_PERIOD = 100
 # epoch number of validation
 _C.SOLVER.EVAL_PERIOD = 50
+# CHeck validation interval
+_C.SOLVER.EVAL_INTERVAL = 0
 
 # Number of images per batch
 # This is global, so if we have 8 GPUs and IMS_PER_BATCH = 16, each GPU will
@@ -156,8 +173,12 @@ _C.SOLVER.NORM_CLASSIFIER_W = False
 # Whether to use AugMix
 _C.SOLVER.USE_AUGMIX = False
 
+# Stacking transforms
+_C.SOLVER.STAGE_TRANSFORMS = []
+_C.SOLVER.STAGE_PERIOD = []
+
 # n images to augment for each dataset image
-_C.SOLVER.AUG_PER_IMG = 1
+_C.SOLVER.AUG_PER_IMG = 0
 
 # This is global, so if we have 8 GPUs and IMS_PER_BATCH = 16, each GPU will
 # see 2 images per batch
@@ -172,10 +193,3 @@ _C.TEST.WEIGHT = ""
 _C.TEST.NECK_FEAT = 'after'
 # Whether feature is nomalized before test, if yes, it is equivalent to cosine distance
 _C.TEST.FEAT_NORM = 'yes'
-
-# ---------------------------------------------------------------------------- #
-# Misc options
-# ---------------------------------------------------------------------------- #
-# Path to checkpoint and saved log of trained model
-_C.OUTPUT_DIR = ""
-_C.TB_LOG_DIR = ""

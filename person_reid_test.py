@@ -16,7 +16,7 @@ from torchinfo import summary
 from config import cfg
 from data.transforms import build_transforms
 from modeling import build_model
-from utils.logger import setup_logger
+from utils.logger import _setup_loggers
 
 
 @dataclass
@@ -57,7 +57,7 @@ def main(args):
     cfg.merge_from_list(args.opts)
     cfg.freeze()
 
-    logger = setup_logger("reid_baseline", '/tmp', 0)
+    logger = _setup_loggers("reid_baseline", '/tmp', 0)
     logger.info("Using {} GPUS".format(num_gpus))
     logger.info(args)
 

@@ -73,9 +73,23 @@ class Baseline(nn.Module):
             self.classifier.apply(weights_init_classifier)
 
     @staticmethod
-    def __load_base(model_name, last_stride, pretrained):
-        assert model_name in MODELS, "This model is currently unavailable"
+    def __show_available_models():
+        msg = 'Available models:\n'
+        for model_name in MODELS.keys():
+            msg += f'{model_name}\n'
+        return msg
+
+    def __load_base(self, model_name, last_stride, pretrained):
+        assert model_name in MODELS, f"This model is currently unavailable\n{self.__show_available_models()}"
         return MODELS[model_name](last_stride, pretrained=pretrained)
+
+    def __get_cls_score(self, feat):
+        if self.norm_classifier_w:
+            feat = F.normalize(feat, p=2, dim=1)
+            with torch.no_grad():
+                self.classifier.weight.div_(torch.norm(self.classifier.weight, dim=1, keepdim=True))
+        cls_score = self.classifier(feat)
+        return cls_score
 
     def base_forward(self, x):
         global_feat = self.gap(self.base(x))  # (b, 2048, 1, 1)
@@ -87,13 +101,16 @@ class Baseline(nn.Module):
         return feat, global_feat
 
     def train_forward(self, x):
-        feat, global_feat = self.__base_forward(x)
-        if self.norm_classifier_w:
-            feat = F.normalize(feat, p=2, dim=1)
-            with torch.no_grad():
-                self.classifier.weight.div_(torch.norm(self.classifier.weight, dim=1, keepdim=True))
-        cls_score = self.classifier(feat)
+        feat, global_feat = self.base_forward(x)
+        cls_score = self.__get_cls_score(feat)
         return cls_score, global_feat
+
+    def forward(self, x):
+        feat, global_feat = self.base_forward(x)
+        if self.neck_feat == 'after':
+            return feat
+        else:
+            return global_feat
 
     def load_param(self, trained_path):
         param_dict = torch.load(trained_path)['model']

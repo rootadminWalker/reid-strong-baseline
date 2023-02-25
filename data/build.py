@@ -4,12 +4,46 @@
 @contact: sherlockliao01@gmail.com
 """
 
+import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 
 from .collate_batch import train_collate_fn, val_collate_fn
 from .datasets import init_dataset, ImageDataset
 from .samplers import RandomIdentitySampler  # New add by gu
 from .transforms import build_transforms
+from .transforms import build_transforms_stage
+
+
+class REIDDataModule(pl.LightningDataModule):
+    def __init__(self, train_dataloaders, val_dataloader, num_queries, num_classes, stage_period):
+        super(REIDDataModule, self).__init__()
+        self._train_dataloaders = train_dataloaders
+        self._val_dataloader = val_dataloader
+        self._num_queries = num_queries
+        self._num_classes = num_classes
+        self._stage_period = stage_period
+        self._stage_idx = 0
+
+    @property
+    def num_queries(self):
+        return self._num_queries
+
+    @property
+    def num_classes(self):
+        return self._num_classes
+
+    def train_dataloader(self):
+        if len(self._stage_period) == 0:
+            return self._train_dataloaders[0]
+
+        if self._stage_idx < len(self._stage_period):
+            if (self.trainer.current_epoch + 1) == self._stage_period[self._stage_idx]:
+                self._stage_idx += 1
+        train_dataloader = self._train_dataloaders[self._stage_idx]
+        return train_dataloader
+
+    def val_dataloader(self):
+        return self._val_dataloader
 
 
 def make_data_loader(cfg):

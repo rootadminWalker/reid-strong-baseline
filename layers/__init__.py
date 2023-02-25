@@ -15,12 +15,55 @@ from .triplet_loss import TripletLoss, EuclideanDistance
 d_l = {'am': 0, 'CTL': 1, 'triplet': 2, 'center': 3}
 
 
+def center_loss(cfg, num_classes, feat_dim):
+    center_criterion = CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)  # center loss
+    print('\t', center_criterion)
+    return center_criterion
+
+
+def triplet_loss(cfg, num_classes, feat_dim):
+    triplet = TripletLoss(cfg.SOLVER.MARGIN)  # triplet loss
+    print('\t', triplet)
+    return triplet
+
+
+def CTL(cfg, num_classes, feat_dim):
+    distance = EuclideanDistance()
+    ctl = CentroidTripletLoss(margin=cfg.SOLVER.MARGIN, distance=distance, reducer=DoNothingReducer())
+    print('\t', ctl)
+    return ctl
+
+
+def id_loss(cfg, num_classes, feat_dim):
+    if cfg.MODEL.IF_LABELSMOOTH == 'on':
+        if 'am' in cfg.MODEL.METRIC_LOSS_TYPE:
+            xent = AMSoftmaxLoss(s=cfg.SOLVER.AM_S, m=cfg.SOLVER.AM_M, num_classes=num_classes,
+                                 epsilon=cfg.SOLVER.ID_EPSILON)
+        else:
+            xent = CrossEntropyLabelSmooth(num_classes=num_classes, epsilon=cfg.SOLVER.ID_EPSILON)  # new add by luo
+        print("label smooth on, ", end='')
+    else:
+        if 'am' in cfg.MODEL.METRIC_LOSS_TYPE:
+            xent = AMSoftmaxLoss(num_classes=num_classes, epsilon=0)
+        else:
+            xent = F.cross_entropy
+
+    return xent
+
+
 def check_loss_type_valid(loss_type_str):
     s = loss_type_str.split('_')
     for idx in range(len(s) - 1):
         curr_ = d_l[s[idx]]
         next_ = d_l[s[idx + 1]]
-        assert curr_ < next_, "You have the wrong format"
+        if curr_ > next_:
+            return False
+    return True
+
+
+def extract_loss_names(loss_type_str):
+    assert check_loss_type_valid(loss_type_str), "Wrong loss format"
+    return loss_type_str.split('_')
 
 
 def make_loss(cfg, num_classes):  # modified by gu
@@ -68,54 +111,53 @@ def make_loss_with_center(cfg, num_classes):  # modified by gu
     else:
         feat_dim = 2048
 
-    check_loss_type_valid(cfg.MODEL.METRIC_LOSS_TYPE)
+    assert check_loss_type_valid(cfg.MODEL.METRIC_LOSS_TYPE), "Wrong loss format"
 
     print("Criterions: ")
+    print("-----------------")
     if 'center' in cfg.MODEL.METRIC_LOSS_TYPE:
         center_criterion = CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)  # center loss
-        print('\t', center_criterion)
+        print(center_criterion)
     if 'triplet' in cfg.MODEL.METRIC_LOSS_TYPE:
         triplet = TripletLoss(cfg.SOLVER.MARGIN)  # triplet loss
-        print('\t', triplet)
+        print(triplet)
     if 'CTL' in cfg.MODEL.METRIC_LOSS_TYPE:
         distance = EuclideanDistance()
         ctl = CentroidTripletLoss(margin=cfg.SOLVER.MARGIN, distance=distance, reducer=DoNothingReducer())
-        print('\t', ctl)
+        print(ctl)
 
-    if cfg.MODEL.IF_LABELSMOOTH == 'on':
-        if 'am' in cfg.MODEL.METRIC_LOSS_TYPE:
-            xent = AMSoftmaxLoss(s=cfg.SOLVER.AM_S, m=cfg.SOLVER.AM_M, num_classes=num_classes,
-                                 epsilon=cfg.SOLVER.ID_EPSILON)
-        else:
-            xent = CrossEntropyLabelSmooth(num_classes=num_classes, epsilon=cfg.SOLVER.ID_EPSILON)  # new add by luo
-        print("\tlabel smooth on, ", end='')
-    else:
-        if 'am' in cfg.MODEL.METRIC_LOSS_TYPE:
-            xent = AMSoftmaxLoss(num_classes=num_classes, epsilon=0)
-        else:
-            xent = F.cross_entropy
+    xent = id_loss(cfg, num_classes, feat_dim)
     print(xent)
     print("numclasses:", num_classes)
 
     def loss_func(score, feat, target):
+        loss_components = {}
         loss_center = cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(feat, target)
         loss_classification = xent(score, target)
-        if cfg.MODEL.METRIC_LOSS_TYPE == 'center':
-            loss_total = loss_classification + loss_center
-            return loss_total, loss_classification, loss_center
+        loss_components['center'] = loss_center
+        loss_components['classification'] = loss_classification
+        loss_total = loss_center + loss_classification
 
-        elif 'triplet_center' in cfg.MODEL.METRIC_LOSS_TYPE:
+        # if cfg.MODEL.METRIC_LOSS_TYPE == 'center':
+        #     loss_total = loss_classification + loss_center
+        #     # return loss_total, loss_classification, loss_center
+        if 'triplet_center' in cfg.MODEL.METRIC_LOSS_TYPE:
             loss_triplet = triplet(feat, target)[0]
+            loss_components['triplet'] = loss_triplet
+            loss_total += loss_triplet
             if 'CTL' in cfg.MODEL.METRIC_LOSS_TYPE:
                 loss_ctl = ctl(feat, target)
-                loss_total = loss_classification + loss_triplet + loss_center + loss_ctl
-                return loss_total, loss_classification, loss_center, loss_triplet, loss_ctl
-            else:
-                loss_total = loss_classification + loss_triplet + loss_center
-                return loss_total, loss_classification, loss_center, loss_triplet
-
+                loss_components['CTL'] = loss_ctl
+                loss_total += loss_ctl
+                # loss_total = loss_classification + loss_triplet + loss_center + loss_ctl
+                # return loss_total, loss_classification, loss_center, loss_triplet, loss_ctl
+            # else:
+            #     loss_total = loss_classification + loss_triplet + loss_center
+                # return loss_total, loss_classification, loss_center, loss_triplet
         else:
-            print('expected METRIC_LOSS_TYPE with center should be center, triplet_center'
+            raise ValueError('expected METRIC_LOSS_TYPE with center should be center, triplet_center'
                   'but got {}'.format(cfg.MODEL.METRIC_LOSS_TYPE))
+
+        return loss_total, loss_components
 
     return loss_func, center_criterion

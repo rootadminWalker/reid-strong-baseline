@@ -6,15 +6,15 @@
 
 import numpy as np
 import torch
-from ignite.metrics import Metric
 
 from data.datasets.eval_reid import eval_func
 from .re_ranking import re_ranking
 
 
-class R1_mAP(Metric):
+# class R1_mAP(Metric):
+class R1_mAP:
     def __init__(self, num_query, max_rank=50, feat_norm='yes'):
-        super(R1_mAP, self).__init__()
+        # super(R1_mAP, self).__init__()
         self.num_query = num_query
         self.max_rank = max_rank
         self.feat_norm = feat_norm
@@ -57,9 +57,10 @@ class R1_mAP(Metric):
         return cmc, mAP
 
 
-class R1_mAP_reranking(Metric):
+# class R1_mAP_reranking(Metric):
+class R1_mAP_reranking:
     def __init__(self, num_query, max_rank=50, feat_norm='yes'):
-        super(R1_mAP_reranking, self).__init__()
+        # super(R1_mAP_reranking, self).__init__()
         self.num_query = num_query
         self.max_rank = max_rank
         self.feat_norm = feat_norm

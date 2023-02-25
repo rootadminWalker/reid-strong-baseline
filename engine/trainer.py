@@ -25,12 +25,6 @@ best_mAP = 0
 best_rank1 = 0
 
 
-class TrainModule(LightningModule):
-    def __init__(self, cfg, num_classes):
-        super(TrainModule, self).__init__()
-        self.model = build_model(cfg, num_classes)
-
-
 def create_supervised_trainer(model, optimizer, loss_fn,
                               device=None):
     """
@@ -105,10 +99,10 @@ def create_supervised_trainer_with_center(model, center_criterion, optimizer, op
         target = target.to(device) if torch.cuda.device_count() >= 1 else target
         score, feat = model(img)
         losses = loss_fn(score, feat, target)
-        if isinstance(losses, tuple):
-            total_loss, *loss_components = losses
-        else:
-            total_loss = losses
+        # if isinstance(losses, tuple):
+        total_loss, loss_components = losses
+        # else:
+        #     total_loss = losses
         # print("Total loss is {}, center loss is {}".format(loss, center_criterion(feat, target)))
         total_loss.backward()
         optimizer.step()
@@ -253,14 +247,15 @@ def do_train_with_center(
         scheduler,
         loss_fn,
         num_query,
-        start_epoch
+        start_epoch,
+        end_epoch
 ):
     log_period = cfg.SOLVER.LOG_PERIOD
     checkpoint_period = cfg.SOLVER.CHECKPOINT_PERIOD
     eval_period = cfg.SOLVER.EVAL_PERIOD
     output_dir = cfg.OUTPUT_DIR
     device = cfg.MODEL.DEVICE
-    epochs = cfg.SOLVER.MAX_EPOCHS
+    epochs = end_epoch
 
     logger = logging.getLogger("reid_baseline")
     logger.info("Start training")
@@ -283,12 +278,12 @@ def do_train_with_center(
     # average metric to attach on trainer
     RunningAverage(output_transform=lambda x: x['total_loss']).attach(trainer, 'avg_total_loss')
     RunningAverage(output_transform=lambda x: x['acc']).attach(trainer, 'avg_acc')
-    RunningAverage(output_transform=lambda x: x['loss_components'][0]).attach(trainer, 'avg_id_loss')
-    RunningAverage(output_transform=lambda x: x['loss_components'][1]).attach(trainer, 'avg_center_loss')
+    RunningAverage(output_transform=lambda x: x['loss_components']['classification']).attach(trainer, 'avg_id_loss')
+    RunningAverage(output_transform=lambda x: x['loss_components']['center']).attach(trainer, 'avg_center_loss')
     if 'triplet_center' in cfg.MODEL.METRIC_LOSS_TYPE:
-        RunningAverage(output_transform=lambda x: x['loss_components'][2]).attach(trainer, 'avg_triplet_loss')
+        RunningAverage(output_transform=lambda x: x['loss_components']['triplet']).attach(trainer, 'avg_triplet_loss')
     if 'CTL' in cfg.MODEL.METRIC_LOSS_TYPE:
-        RunningAverage(output_transform=lambda x: x['loss_components'][3]).attach(trainer, 'avg_ctl_loss')
+        RunningAverage(output_transform=lambda x: x['loss_components']['CTL']).attach(trainer, 'avg_ctl_loss')
 
     tb_logger.attach_output_handler(
         trainer,
