@@ -33,12 +33,13 @@ class Market1501(BaseImageDataset):
         self.gallery_dir = osp.join(self.dataset_dir, 'bounding_box_test')
 
         self.aug_per_image = aug_per_image
-        assert self.aug_per_image > 0, "This value should be an integer greater than 0"
-        if self.aug_per_image:
+        assert self.aug_per_image >= 0, "This value should be an integer greater or equal 0"
+        if self.aug_per_image > 0:
             warnings.warn("""
             Please use transforms that will generate different images each time,
             Otherwise using this parameter will make the dataset generate <aug_per_image> same images each time
             """, UserWarning)
+        self.aug_per_image += 1
 
         self._check_before_run()
 
@@ -82,7 +83,6 @@ class Market1501(BaseImageDataset):
 
         dataset = []
         # for img_path in img_paths:
-        final_idx = 0
         for idx in range(len(img_paths) * self.aug_per_image):
             img_path = img_paths[idx // self.aug_per_image]
             pid, camid = map(int, pattern.search(img_path).groups())
