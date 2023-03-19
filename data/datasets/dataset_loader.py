@@ -6,12 +6,31 @@
 
 import os.path as osp
 
+import cv2 as cv
 from PIL import Image
 from torch.utils.data import Dataset
-import cv2 as cv
 
 
-def read_image(img_path, use_rgb):
+def to_rgb(img):
+    return cv.cvtColor(img, cv.COLOR_BGR2RGB)
+
+
+def to_bgr(img):
+    return img
+
+
+def to_hsv(img):
+    return cv.cvtColor(img, cv.COLOR_BGR2HSV)
+
+
+color_func = {
+    'rgb': to_rgb,
+    'bgr': to_bgr,
+    'hsv': to_hsv
+}
+
+
+def read_image(img_path, color_space):
     """Keep reading image until succeed.
     This can avoid IOError incurred by heavy IO process."""
     got_img = False
@@ -21,8 +40,9 @@ def read_image(img_path, use_rgb):
         try:
             # img = Image.open(img_path).convert('RGB')
             img = cv.imread(img_path)
-            if use_rgb:
-                img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+            # if use_rgb:
+            #     img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+            img = color_func[color_space](img)
 
             img = Image.fromarray(img)
             got_img = True
@@ -35,9 +55,9 @@ def read_image(img_path, use_rgb):
 class ImageDataset(Dataset):
     """Image Person ReID Dataset"""
 
-    def __init__(self, dataset, use_rgb, transform=None):
+    def __init__(self, dataset, color_space, transform=None):
         self.dataset = dataset
-        self.use_rgb = use_rgb
+        self.color_space = color_space
         self.transform = transform
 
     def __len__(self):
@@ -45,7 +65,7 @@ class ImageDataset(Dataset):
 
     def __getitem__(self, index):
         img_path, pid, camid = self.dataset[index]
-        img = read_image(img_path, self.use_rgb)
+        img = read_image(img_path, self.color_space)
 
         if self.transform is not None:
             img = self.transform(img)

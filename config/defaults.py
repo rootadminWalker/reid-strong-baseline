@@ -94,7 +94,9 @@ _C.DATALOADER.FIXED_BATCHES_PER_EPOCH = False
 # Times of doing sanity check if batches per epoch were fixed
 _C.DATALOADER.FIND_CORRECT_NUM_TIMES = 30
 # To use RGB color mode or not
-_C.DATALOADER.USE_RGB = False
+_C.DATALOADER.COLOR_SPACE = 'bgr'
+# Train val split
+_C.DATALOADER.TRAIN_VAL_SPLIT = 1.0
 
 # ---------------------------------------------------------------------------- #
 # Solver
@@ -124,6 +126,7 @@ _C.SOLVER.CLUSTER_MARGIN = 0.3
 _C.SOLVER.CENTER_LR = 0.5
 # Balanced weight of center loss
 _C.SOLVER.CENTER_LOSS_WEIGHT = 0.0005
+_C.SOLVER.CLASSIFICATION_LOSS_WEIGHT = 1.
 # Settings of range loss
 # _C.SOLVER.RANGE_K = 2
 # _C.SOLVER.RANGE_MARGIN = 0.3
@@ -140,6 +143,9 @@ _C.SOLVER.GAMMA = 0.1
 # decay step of learning rate
 _C.SOLVER.STEPS = (30, 55)
 
+_C.SOLVER.DIRECT_STEPS = []
+_C.SOLVER.DIRECT_LRS = []
+
 # warm up factor
 _C.SOLVER.WARMUP_FACTOR = 1.0 / 3
 # iterations of warm up
@@ -154,9 +160,11 @@ _C.SOLVER.CHECKPOINT_PERIOD = 50
 # iteration of display training log
 _C.SOLVER.LOG_PERIOD = 100
 # epoch number of validation
-_C.SOLVER.EVAL_PERIOD = 50
+_C.SOLVER.EVAL_PERIOD = 10
 # CHeck validation interval
 _C.SOLVER.EVAL_INTERVAL = 0
+# Times of checking min val interval
+_C.SOLVER.MIN_VAL_INTERVAL_CHECK = 10
 
 # Number of images per batch
 # This is global, so if we have 8 GPUs and IMS_PER_BATCH = 16, each GPU will

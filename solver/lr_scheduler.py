@@ -79,7 +79,7 @@ class WarmupLR(Callback):
         optimizer = trainer.strategy.optimizers[0]
         current_epoch = trainer.current_epoch + 1
         warmup_factor = 1
-        if current_epoch < self.warmup_iters:
+        if current_epoch <= self.warmup_iters:
             if self.warmup_method == "constant":
                 warmup_factor = self.warmup_factor
             elif self.warmup_method == "linear":
@@ -87,3 +87,25 @@ class WarmupLR(Callback):
                 warmup_factor = self.warmup_factor * (1 - alpha) + alpha
 
             self.__change_lr(optimizer, self.base_lr * warmup_factor)
+
+
+class DirectSetLR(Callback):
+    def __init__(self, direct_steps, direct_lrs):
+        self.direct_steps = direct_steps
+        self.direct_lrs = direct_lrs
+        self._direct_idx = 0
+        assert len(self.direct_steps) == len(self.direct_lrs), "Two must be the same"
+
+    @staticmethod
+    def __change_lr(optimizer, new_lr):
+        for pg in optimizer.param_groups:
+            pg["lr"] = new_lr
+
+    def on_train_epoch_start(self, trainer, pl_module):
+        optimizer = trainer.strategy.optimizers[0]
+        current_epoch = trainer.current_epoch
+        if self._direct_idx < len(self.direct_steps):
+            if current_epoch == self.direct_steps[self._direct_idx]:
+                self.__change_lr(optimizer, self.direct_lrs[self._direct_idx])
+                self._direct_idx += 1
+

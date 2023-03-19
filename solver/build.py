@@ -5,7 +5,7 @@
 """
 
 import torch
-from .lr_scheduler import WarmupLR
+from .lr_scheduler import WarmupLR, DirectSetLR
 
 
 def make_optimizer(cfg, model):
@@ -67,4 +67,11 @@ def build_warmup_lr(cfg):
         warmup_factor=cfg.SOLVER.WARMUP_FACTOR,
         warmup_iters=cfg.SOLVER.WARMUP_ITERS,
         warmup_method=cfg.SOLVER.WARMUP_METHOD
+    )
+
+
+def build_direct_set_lr(cfg):
+    return DirectSetLR(
+        direct_steps=cfg.SOLVER.DIRECT_STEPS,
+        direct_lrs=cfg.SOLVER.DIRECT_LRS
     )

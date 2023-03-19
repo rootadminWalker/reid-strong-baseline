@@ -1,5 +1,7 @@
 import torch
 from torch import nn
+import torch.nn.functional as F
+from utils import weights_init_classifier
 
 
 class CrossEntropyLabelSmooth(nn.Module):
@@ -14,11 +16,10 @@ class CrossEntropyLabelSmooth(nn.Module):
         epsilon (float): weight.
     """
 
-    def __init__(self, num_classes, epsilon=0.1, use_gpu=True):
+    def __init__(self, num_classes, epsilon=0.):
         super(CrossEntropyLabelSmooth, self).__init__()
         self.num_classes = num_classes
         self.epsilon = epsilon
-        self.use_gpu = use_gpu
         self.logsoftmax = nn.LogSoftmax(dim=1)
 
     def forward(self, inputs, targets):
@@ -28,43 +29,61 @@ class CrossEntropyLabelSmooth(nn.Module):
             targets: ground truth labels with shape (num_classes)
         """
         log_probs = self.logsoftmax(inputs)
-        targets = torch.zeros(log_probs.size()).scatter_(1, targets.unsqueeze(1).data.cpu(), 1)
-        if self.use_gpu: targets = targets.cuda()
+        # targets = F.one_hot(targets, num_classes=self.num_classes)
+        targets = torch.zeros(log_probs.size()).scatter_(1, targets.unsqueeze(1).data.cpu(), 1).cuda()
         targets = (1 - self.epsilon) * targets + self.epsilon / self.num_classes
-        loss = (- targets * log_probs).mean(0).sum()
+        loss = (-targets * log_probs).mean(0).sum()
         return loss
+
+
+class CrossEntropyHead(nn.Module):
+    def __init__(self, in_features, num_classes, epsilon=0., bias=False):
+        super(CrossEntropyHead, self).__init__()
+        self.in_features = in_features
+        self.num_classes = num_classes
+        self.CrossEntropy = CrossEntropyLabelSmooth(self.num_classes, epsilon)
+        self.fc = nn.Linear(self.in_features, self.num_classes, bias=bias)
+        self.fc.apply(weights_init_classifier)
+
+    def forward(self, x, labels):
+        assert len(x) == len(labels)
+        assert torch.min(labels) >= 0
+        assert torch.max(labels) < self.num_classes
+
+        features = self.fc(x)
+        return self.CrossEntropy(features, labels)
 
 
 class AMSoftmaxLoss(nn.Module):
     """
     Original code by ppriyank@github.com
     """
-    def __init__(self, s=30, m=0.35, num_classes=625, use_gpu=True, epsilon=0.1):
+    def __init__(self, in_features, s=30, m=0.35, num_classes=625, epsilon=0.1):
         super(AMSoftmaxLoss, self).__init__()
+        self.in_features = in_features
         self.s = s
         self.m = m
         self.num_classes = num_classes
-        self.use_gpu = use_gpu
-        self.CrossEntropy = CrossEntropyLabelSmooth(self.num_classes, epsilon=epsilon, use_gpu=use_gpu)
+        self.CrossEntropy = CrossEntropyLabelSmooth(self.num_classes, epsilon=epsilon)
+        # TODO: Remove this .cuda() after making the combined loss function into an module
+        self.fc = nn.Linear(self.in_features, self.num_classes, bias=False).cuda()
+        self.fc.apply(weights_init_classifier)
 
-    def forward(self, features, labels):
-        '''
-        x : feature vector : (b x  d) b= batch size d = dimension
-        labels : (b,)
-        classifier : Fully Connected weights of classification layer (dxC), C is the number of classes: represents the vectors for class
-        '''
-        # x = torch.rand(32,2048)
-        # label = torch.tensor([0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,6,6,6,6,7,7,7,7,])
-        # features = nn.functional.normalize(features, p=2, dim=1)  # normalize the features
-        # with torch.no_grad():
-        #     classifier.weight.div_(torch.norm(classifier.weight, dim=1, keepdim=True))
-        #
-        # cos_angle = classifier(features)
-        cos_angle = features
-        cos_angle = torch.clamp(cos_angle, min=-1, max=1)
-        b = features.size(0)
+    def forward(self, x, labels):
+        assert len(x) == len(labels)
+        assert torch.min(labels) >= 0
+        assert torch.max(labels) < self.num_classes
+
+        x = F.normalize(x, p=2, dim=1)
+
+        with torch.no_grad():
+            self.fc.weight.div_(torch.norm(self.fc.weight, dim=1, keepdim=True))
+
+        b = x.size(0)
+        features = self.fc(x)
+        features = torch.clamp(features, min=-1, max=1)
         for i in range(b):
-            cos_angle[i][labels[i]] = cos_angle[i][labels[i]] - self.m
-        weighted_cos_angle = self.s * cos_angle
-        log_probs = self.CrossEntropy(weighted_cos_angle, labels)
+            features[i][labels[i]] = features[i][labels[i]] - self.m
+        s_features = self.s * features
+        log_probs = self.CrossEntropy(s_features, labels)
         return log_probs
