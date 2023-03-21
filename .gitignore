@@ -121,3 +121,4 @@ venv.bak/
 pretrained_weights/
 /demo.py
 /demo2.py
+/lightning_logs/

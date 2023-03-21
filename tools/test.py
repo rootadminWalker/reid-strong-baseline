@@ -17,7 +17,7 @@ from config import cfg
 from data import make_data_loader
 from engine.inference import inference
 from modeling import build_model
-from utils.logger import setup_logger
+from utils.logger import _setup_loggers
 
 
 def main():
@@ -41,7 +41,7 @@ def main():
     if output_dir and not os.path.exists(output_dir):
         mkdir(output_dir)
 
-    logger = setup_logger("reid_baseline", output_dir, 0)
+    logger = _setup_loggers("reid_baseline", output_dir, 0)
     logger.info("Using {} GPUS".format(num_gpus))
     logger.info(args)
 

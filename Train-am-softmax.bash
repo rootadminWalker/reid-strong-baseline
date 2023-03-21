@@ -1,0 +1,1 @@
+python3 tools/train_lightning.py --config_file=configs/am-softmax_triplet_with_center.yml MODEL.NAME "resnet50_ibn_a" MODEL.DEVICE_ID "'0'" DATASETS.ROOT_DIR "/media/root_walker/DATA/datasets" DATASETS.NAMES "('market1501')" OUTPUT_DIR "/media/root_walker/DATA/outputs/Market1501_outputs/2023_2_26/AM-Softmax-m-0.4-triplet-margin-8.0" SOLVER.AM_M 0.4 SOLVER.MARGIN 8.0

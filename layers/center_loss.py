@@ -56,6 +56,10 @@ class CenterLoss(nn.Module):
         return loss
 
 
+def center_loss(cfg, feat_dim, num_classes):
+    return CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)
+
+
 if __name__ == '__main__':
     use_gpu = False
     center_loss = CenterLoss(use_gpu=use_gpu)

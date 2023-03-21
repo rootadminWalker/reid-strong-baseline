@@ -1,0 +1,11 @@
+torch~=1.12.1
+numpy~=1.21.6
+h5py~=3.7.0
+scipy~=1.7.3
+Pillow~=9.2.0
+torchvision~=0.13.1
+yacs~=0.1.8
+torchinfo~=1.7.0
+matplotlib~=3.5.3
+scikit-learn~=0.22.2
+plotly~=5.10.0

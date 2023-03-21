@@ -9,7 +9,7 @@ import os
 import sys
 
 
-def setup_logger(name, save_dir, distributed_rank):
+def _setup_loggers(name, save_dir, distributed_rank):
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
     # don't log results for the non-master process
