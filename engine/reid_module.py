@@ -66,9 +66,6 @@ class PersonReidModule(pl.LightningModule):
         self.__log_losses(train_output, mode='train')
         return train_output
 
-    # def on_train_batch_end(self, output, batch, batch_idx):
-    #     print("oweifjewiofwe jfoiwejf wepjf w jwejfjwoif jwpf iowjf iowjf w")
-
     def validation_step(self, batch, batch_idx):
         data, pids, camids = batch
         feat = self.model(data)
@@ -88,8 +85,6 @@ class PersonReidModule(pl.LightningModule):
 
     def on_train_epoch_end(self):
         self.lr_schedulers().step()
-        # print(self.optimizers()[0].param_groups[0]['lr'])
-        # print(self.lr_schedulers().last_epoch, self.lr_schedulers().milestones)
 
     @staticmethod
     def __setup_console_logging():
@@ -102,10 +97,3 @@ class PersonReidModule(pl.LightningModule):
         # self.log(f'{mode}_acc', loss_output[f'{mode}_acc'])
         for loss_name, loss_val in loss_output[f'{mode}_loss_components'].items():
             self.log(f'{mode}_{loss_name}', loss_val)
-
-# if __name__ == '__main__':
-#     cfg.merge_from_file("../configs/am-softmax_triplet_with_center.yml")
-#     cfg.DATASETS.ROOT_DIR = "/media/root_walker/DATA/datasets/"
-#     cfg.freeze()
-#     train_loader, val_loader, num_query, num_classes = make_data_loader(cfg)
-#     module = PersonReidModule(cfg, num_query, num_query)

@@ -117,7 +117,6 @@ def make_loss_with_center(cfg, num_classes):  # modified by gu
     print("numclasses:", num_classes)
 
     def loss_func(out_feat, global_feat, targets):
-        # print("At loss_func", out_feat[0][:3], global_feat[0][:3])
         loss_components = {}
         loss_center = cfg.SOLVER.CENTER_LOSS_WEIGHT * center_criterion(global_feat, targets)
         loss_classification = cfg.SOLVER.CLASSIFICATION_LOSS_WEIGHT * xent(out_feat, targets)
@@ -125,9 +124,6 @@ def make_loss_with_center(cfg, num_classes):  # modified by gu
         loss_components['classification'] = loss_classification
         loss_total = loss_center + loss_classification
 
-        # if cfg.MODEL.METRIC_LOSS_TYPE == 'center':
-        #     loss_total = loss_classification + loss_center
-        #     # return loss_total, loss_classification, loss_center
         if 'triplet_center' in cfg.MODEL.METRIC_LOSS_TYPE:
             loss_triplet, dist_ap, dist_an = triplet(global_feat, targets)
             loss_components['triplet'] = loss_triplet
@@ -138,11 +134,6 @@ def make_loss_with_center(cfg, num_classes):  # modified by gu
                 loss_ctl = ctl(global_feat, targets)
                 loss_components['CTL'] = loss_ctl
                 loss_total += loss_ctl
-                # loss_total = loss_classification + loss_triplet + loss_center + loss_ctl
-                # return loss_total, loss_classification, loss_center, loss_triplet, loss_ctl
-            # else:
-            #     loss_total = loss_classification + loss_triplet + loss_center
-            # return loss_total, loss_classification, loss_center, loss_triplet
         else:
             raise ValueError('expected METRIC_LOSS_TYPE with center should be center, triplet_center'
                              'but got {}'.format(cfg.MODEL.METRIC_LOSS_TYPE))
