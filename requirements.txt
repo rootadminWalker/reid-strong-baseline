@@ -12,3 +12,5 @@ scikit-learn~=0.22.2
 plotly~=5.10.0
 rich~=13.3.2
 pytorch_metric_learning~=1.6.3
+tensorboard~=2.10.1
+gdown~=4.6.4
