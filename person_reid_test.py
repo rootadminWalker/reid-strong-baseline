@@ -1,7 +1,6 @@
 import argparse
 import os
 from copy import deepcopy
-import torch.nn.functional as F
 from dataclasses import dataclass
 
 import cv2 as cv

@@ -1,5 +1,4 @@
 import pytorch_lightning as pl
-import torch
 from pytorch_lightning.callbacks import RichProgressBar
 
 from data import make_pl_datamodule
