@@ -89,6 +89,8 @@ def train(cfg):
         # check_val_every_n_epoch=cfg.SOLVER.EVAL_PERIOD,
         val_check_interval=cfg.SOLVER.EVAL_INTERVAL,
         num_sanity_val_steps=0,
+        strategy=cfg.SOLVER.STRATEGY,
+        num_nodes=cfg.SOLVER.NUM_NODES,
     )
     trainer.fit(module, datamodule=datamodule, ckpt_path=checkpoint_path)
 

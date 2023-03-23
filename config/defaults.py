@@ -102,6 +102,8 @@ _C.DATALOADER.TRAIN_VAL_SPLIT = 1.0
 # Solver
 # ---------------------------------------------------------------------------- #
 _C.SOLVER = CN()
+_C.SOLVER.STRATEGY = None
+_C.SOLVER.NUM_NODES = 1
 # Name of optimizer
 _C.SOLVER.OPTIMIZER_NAME = "Adam"
 # Number of max epoches
