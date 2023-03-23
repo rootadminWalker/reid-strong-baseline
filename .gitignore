@@ -122,3 +122,5 @@ pretrained_weights/
 /demo.py
 /demo2.py
 /lightning_logs/
+/demo3.py
+/demo4.py
