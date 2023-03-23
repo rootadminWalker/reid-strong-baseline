@@ -15,7 +15,7 @@ def main(cfg):
     datamodule = make_pl_datamodule(cfg)
 
     model = PersonReidModule(cfg, datamodule.num_classes, datamodule.num_queries)
-    model = model.load_from_checkpoint(cfg.MODEL.PRETRAIN_PATH)
+    # model = model.load_from_checkpoint(cfg.MODEL.PRETRAIN_PATH)
     # model.cuda()
     # model.to_onnx('/tmp/88_95.4_bgr.onnx', torch.randn((1, 3, *cfg.INPUT.SIZE_TRAIN)).cuda(), export_params=True)
     trainer = pl.Trainer(

@@ -90,48 +90,9 @@ def extract_loss_names(loss_type_str):
     return loss_type_str.split('_')
 
 
-# def make_loss(cfg, num_classes):  # modified by gu
-#     sampler = cfg.DATALOADER.SAMPLER
-#     if cfg.MODEL.METRIC_LOSS_TYPE == 'triplet':
-#         triplet = TripletLoss(cfg.SOLVER.MARGIN)  # triplet loss
-#     else:
-#         print('expected METRIC_LOSS_TYPE should be triplet'
-#               'but got {}'.format(cfg.MODEL.METRIC_LOSS_TYPE))
-#
-#     if cfg.MODEL.IF_LABELSMOOTH == 'on':
-#         xent = CrossEntropyLabelSmooth(num_classes=num_classes)  # new add by luo
-#         print("label smooth on, numclasses:", num_classes)
-#
-#     if sampler == 'softmax':
-#         def loss_func(score, feat, target):
-#             return F.cross_entropy(score, target)
-#     elif sampler == 'triplet':
-#         def loss_func(score, feat, target):
-#             return triplet(feat, target)[0]
-#     elif sampler == 'softmax_triplet':
-#         def loss_func(score, feat, target):
-#             if cfg.MODEL.METRIC_LOSS_TYPE == 'triplet':
-#                 loss_triplet = triplet(feat, target)[0]
-#                 if cfg.MODEL.IF_LABELSMOOTH == 'on':
-#                     # return xent(score, target) + triplet(feat, target)[0]
-#                     loss_classification = xent(score, target)
-#                 else:
-#                     # return F.cross_entropy(score, target) + triplet(feat, target)[0]
-#                     loss_classification = F.cross_entropy(score, target)
-#                 loss_total = loss_classification + loss_triplet
-#                 return loss_total, loss_classification, loss_triplet
-#             else:
-#                 print('expected METRIC_LOSS_TYPE should be triplet'
-#                       'but got {}'.format(cfg.MODEL.METRIC_LOSS_TYPE))
-#     else:
-#         print('expected sampler should be softmax, triplet or softmax_triplet, '
-#               'but got {}'.format(cfg.DATALOADER.SAMPLER))
-#     return loss_func
-
-
 # TODO: Make this into an torch module
 def make_loss_with_center(cfg, num_classes):  # modified by gu
-    if cfg.MODEL.NAME == 'resnet18' or cfg.MODEL.NAME == 'resnet34':
+    if cfg.MODEL.NAME == 'resnet18' or cfg.MODEL.NAME == 'resnet34' or 'osnet' in cfg.MODEL.NAME:
         feat_dim = 512
     else:
         feat_dim = 2048

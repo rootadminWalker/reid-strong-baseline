@@ -7,7 +7,7 @@
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 
-from .collate_batch import train_collate_fn, val_collate_fn
+from .collate_batch import train_collate_fn, test_collate_fn
 from .datasets import init_dataset, ImageDataset
 from .samplers import RandomIdentitySampler  # New add by gu
 from .transforms import build_transforms_stage
@@ -57,7 +57,7 @@ def make_data_loaders_with_stages(cfg):
     val_set = ImageDataset(dataset.query + dataset.gallery, color_space, transform=val_transforms)
     val_loader = DataLoader(
         val_set, batch_size=cfg.TEST.IMS_PER_BATCH, shuffle=False, num_workers=num_workers,
-        collate_fn=val_collate_fn
+        collate_fn=test_collate_fn
     )
 
     for st_idx in range(len(cfg.SOLVER.STAGE_TRANSFORMS) + 1):

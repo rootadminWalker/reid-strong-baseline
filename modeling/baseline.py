@@ -5,10 +5,12 @@
 """
 
 import torch
-import torch.nn.functional as F
 from torch import nn
 
-from utils import weights_init_kaiming, weights_init_classifier
+from utils import weights_init_kaiming
+from .backbones.osnet import osnet_ibn_x1_0
+from .backbones.osnet import osnet_x1_0
+from .backbones.osnet_ain import osnet_ain_x1_0
 from .backbones.resnet import resnet50, resnet101
 from .backbones.resnet_ibn import resnet34_ibn_a, resnet50_ibn_a, resnet101_ibn_a
 from .backbones.resnext_ibn import resnext101_ibn_a
@@ -19,26 +21,30 @@ MODELS = {
     "resnet34_ibn_a": resnet34_ibn_a,
     "resnet50_ibn_a": resnet50_ibn_a,
     "resnet101_ibn_a": resnet101_ibn_a,
-    "resnext101_ibn_a": resnext101_ibn_a
+    "resnext101_ibn_a": resnext101_ibn_a,
+    'osnet_x1_0': osnet_x1_0,
+    'osnet_ibn_x1_0': osnet_ibn_x1_0,
+    'osnet_ain_x1_0': osnet_ain_x1_0,
 }
 
 
 class Baseline(nn.Module):
-    in_planes = 2048
+    # in_planes = 2048
 
     def __init__(self, num_classes, last_stride, neck, neck_feat, model_name, pretrain_choice,
                  norm_classifier_w=False):
         super(Baseline, self).__init__()
         self.is_pretrain = pretrain_choice == 'imagenet'
-        self.base = self.__load_base(model_name, last_stride, self.is_pretrain)
         if self.is_pretrain:
             print('Loading pretrained ImageNet model......')
+        self.base = self.__load_backbone(model_name, last_stride, self.is_pretrain)
 
         self.gap = nn.AdaptiveAvgPool2d(1)
         self.num_classes = num_classes
         self.neck = neck
         self.neck_feat = neck_feat
         self.norm_classifier_w = norm_classifier_w
+        self.in_planes = self.__get_in_planes(model_name)
 
         # if self.neck == 'no':
         #     self.classifier = nn.Linear(self.in_planes, self.num_classes)
@@ -52,13 +58,20 @@ class Baseline(nn.Module):
             # self.classifier.apply(weights_init_classifier)
 
     @staticmethod
+    def __get_in_planes(model_name):
+        if model_name == 'resnet18' or model_name == 'resnet34' or 'osnet' in model_name:
+            return 512
+        else:
+            return 2048
+
+    @staticmethod
     def __show_available_models():
         msg = 'Available models:\n'
         for model_name in MODELS.keys():
             msg += f'{model_name}\n'
         return msg
 
-    def __load_base(self, model_name, last_stride, pretrained):
+    def __load_backbone(self, model_name, last_stride, pretrained):
         assert model_name in MODELS, f"This model is currently unavailable\n{self.__show_available_models()}"
         return MODELS[model_name](last_stride, pretrained=pretrained)
 

@@ -330,7 +330,7 @@ class OSNet(nn.Module):
         num_blocks = len(blocks)
         assert num_blocks == len(layers)
         assert num_blocks == len(channels) - 1
-        self.loss = loss
+        # self.loss = loss
         self.feature_dim = feature_dim
 
         # convolutional backbone
@@ -354,13 +354,13 @@ class OSNet(nn.Module):
             blocks[2], layers[2], channels[2], channels[3]
         )
         self.conv5 = Conv1x1(channels[3], channels[3])
-        self.global_avgpool = nn.AdaptiveAvgPool2d(1)
-        # fully connected layer
-        self.fc = self._construct_fc_layer(
-            self.feature_dim, channels[3], dropout_p=None
-        )
+        # self.global_avgpool = nn.AdaptiveAvgPool2d(1)
+        # # fully connected layer
+        # self.fc = self._construct_fc_layer(
+        #     self.feature_dim, channels[3], dropout_p=None
+        # )
         # identity classification layer
-        self.classifier = nn.Linear(self.feature_dim, num_classes)
+        # self.classifier = nn.Linear(self.feature_dim, num_classes)
 
         self._init_params()
 
@@ -418,7 +418,8 @@ class OSNet(nn.Module):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
 
-    def featuremaps(self, x):
+    # def featuremaps(self, x):
+    def forward(self, x):
         x = self.conv1(x)
         x = self.maxpool(x)
         x = self.conv2(x)
@@ -429,23 +430,23 @@ class OSNet(nn.Module):
         x = self.conv5(x)
         return x
 
-    def forward(self, x, return_featuremaps=False):
-        x = self.featuremaps(x)
-        if return_featuremaps:
-            return x
-        v = self.global_avgpool(x)
-        v = v.view(v.size(0), -1)
-        if self.fc is not None:
-            v = self.fc(v)
-        if not self.training:
-            return v
-        y = self.classifier(v)
-        if self.loss == 'softmax':
-            return y
-        elif self.loss == 'triplet':
-            return y, v
-        else:
-            raise KeyError("Unsupported loss: {}".format(self.loss))
+    # def forward(self, x):
+        # x = self.featuremaps(x)
+        # if return_featuremaps:
+        #     return x
+        # v = self.global_avgpool(x)
+        # v = v.view(v.size(0), -1)
+        # if self.fc is not None:
+        #     v = self.fc(v)
+        # if not self.training:
+        #     return v
+        # y = self.classifier(v)
+        # if self.loss == 'softmax':
+        #     return y
+        # elif self.loss == 'triplet':
+        #     return y, v
+        # else:
+        #     raise KeyError("Unsupported loss: {}".format(self.loss))
 
 
 def init_pretrained_weights(model, key=''):

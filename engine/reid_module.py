@@ -1,12 +1,12 @@
 import logging
 
 import pytorch_lightning as pl
+from torch import nn
 
 from layers import make_loss_with_center
 from modeling import build_model
 from solver import make_optimizer_with_center
 from solver.build import build_scheduler
-from torch import nn
 from utils.reid_metric import R1_mAP
 
 
@@ -20,6 +20,9 @@ class PersonReidModule(pl.LightningModule):
 
         self.model = build_model(cfg, num_classes)
         self.loss, self.center_criterion, self.classification_head = make_loss_with_center(cfg, num_classes)
+        # self.criteria = Criteria(cfg, num_classes)
+        # self.classification_head = self.criteria.get_criterion_for_optimizer_adding('classification')
+        # self.center_criterion = self.criteria.get_criterion_for_optimizer_adding('center')
         # self.loss, self.center_criterion, _ = make_loss_with_center(cfg, num_classes)
         self.metric = R1_mAP(num_queries, max_rank=50, feat_norm=cfg.TEST.FEAT_NORM)
         self.console = self.__setup_console_logging()
@@ -31,7 +34,6 @@ class PersonReidModule(pl.LightningModule):
         opt, opt_center = make_optimizer_with_center(
             cfg=self.cfg,
             model=nn.Sequential(self.model, self.classification_head),
-            # model=self.model,
             center_criterion=self.center_criterion
         )
         multistep_scheduler = build_scheduler(opt, self.cfg)
@@ -47,13 +49,9 @@ class PersonReidModule(pl.LightningModule):
         opt_center.zero_grad()
 
         images, targets = batch
-        # print(batch_idx, images.shape)
-        # score, global_feat = self.model.train_forward(images)
-        # losses = self.loss(score, global_feat, targets)
         out_feat, global_feat = self.model.train_forward(images)
-        # print("At module", out_feat[0][:3], global_feat[0][:3])
-        losses = self.loss(out_feat, global_feat, targets)
-        total_train_loss, train_loss_components = losses
+        total_train_loss, train_loss_components = self.loss(out_feat, global_feat, targets)
+        # total_train_loss, train_loss_components = self.criteria(out_feat, global_feat, targets)
 
         self.manual_backward(total_train_loss)
         opt.step()
