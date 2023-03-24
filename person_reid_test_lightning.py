@@ -75,7 +75,7 @@ def main(cfg):
             person_boxes = keep_only_person_boxes(boxes.boxes)
             for person_box in person_boxes:
                 crop_image = bridge.compressed_imgmsg_to_cv2(person_box.source_img)
-                if cfg.DATALOADER.USE_RGB:
+                if cfg.DATALOADER.COLOR_SPACE == 'rgb':
                     crop_image = cv.cvtColor(crop_image, cv.COLOR_BGR2RGB)
                 crop_image = Image.fromarray(crop_image)
                 blob = transforms(crop_image).to(device).unsqueeze(0)
