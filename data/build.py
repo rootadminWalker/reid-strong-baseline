@@ -54,7 +54,7 @@ class REIDDataModule(pl.LightningDataModule):
 
 
 def make_val_dataset(cfg, base_dataset=None):
-    if cfg.DATASETS.VAL_DATASET_NAMES[0] is not None:
+    if cfg.DATASETS.VAL_DATASET_NAMES is not None:
         CD_dataset = init_dataset(
             cfg.DATASETS.VAL_DATASET_NAMES,
             root=cfg.DATASETS.VAL_ROOT,
