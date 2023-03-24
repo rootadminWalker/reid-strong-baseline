@@ -75,9 +75,14 @@ _C.INPUT.PADDING = 10
 # -----------------------------------------------------------------------------
 _C.DATASETS = CN()
 # List of the dataset names for training, as present in paths_catalog.py
-_C.DATASETS.NAMES = ('market1501')
-# Root directory where datasets should be used (and downloaded if not found)
-_C.DATASETS.ROOT_DIR = ('/home/matthew/datasets')
+_C.DATASETS.TRAIN_DATASET_NAMES = ('market1501')
+# List of the dataset names for validation (evaluating)
+_C.DATASETS.VAL_DATASET_NAMES = (None)
+# Root directory where train datasets should be used (and downloaded if not found)
+_C.DATASETS.TRAIN_ROOT = ('/home/matthew/datasets')
+# Root directory where validation datasets should be used (and downloaded if not found)
+_C.DATASETS.VAL_ROOT = (None)
+
 
 # -----------------------------------------------------------------------------
 # DataLoader

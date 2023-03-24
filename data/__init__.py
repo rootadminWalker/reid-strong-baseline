@@ -4,4 +4,4 @@
 @contact: sherlockliao01@gmail.com
 """
 
-from .build import make_pl_datamodule, make_data_loaders_with_stages
+from .build import make_pl_datamodule, make_data_loaders_with_stages, make_val_dataset

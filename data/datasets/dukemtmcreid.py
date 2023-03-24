@@ -28,7 +28,7 @@ class DukeMTMCreID(BaseImageDataset):
     # images:16522 (train) + 2228 (query) + 17661 (gallery)
     # cameras: 8
     """
-    dataset_dir = 'dukemtmc-reid'
+    dataset_dir = ''
 
     def __init__(self, root='/home/haoluo/data', verbose=True, **kwargs):
         super(DukeMTMCreID, self).__init__()
@@ -38,7 +38,7 @@ class DukeMTMCreID(BaseImageDataset):
         self.query_dir = osp.join(self.dataset_dir, 'DukeMTMC-reID/query')
         self.gallery_dir = osp.join(self.dataset_dir, 'DukeMTMC-reID/bounding_box_test')
 
-        self._download_data()
+        # self._download_data()
         self._check_before_run()
 
         train = self._process_dir(self.train_dir, relabel=True)
