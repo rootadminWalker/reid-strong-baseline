@@ -29,7 +29,7 @@ def main(cfg):
     omit_pids = []
     datamodule = make_pl_datamodule(cfg)
 
-    model = build_model(cfg, datamodule.num_classes)
+    model = build_model(cfg, datamodule.train_num_classes)
     model.load_state_dict(torch.load(cfg.MODEL.PRETRAIN_PATH)['model'])
     model.to('cuda:0')
     model.eval()

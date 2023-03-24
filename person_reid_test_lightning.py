@@ -45,7 +45,7 @@ def main(cfg):
     box_topic = '/YD/boxes'
     device = 'cuda:0'
 
-    model = PersonReidModule(cfg, num_classes=751, num_queries=3368)
+    model = PersonReidModule(cfg, train_num_classes=751, val_num_queries=3368)
     model.load_from_checkpoint(cfg.TEST.WEIGHT)
     model.eval()
     model.to(device)

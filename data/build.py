@@ -14,22 +14,33 @@ from .transforms import build_transforms_stage
 
 
 class REIDDataModule(pl.LightningDataModule):
-    def __init__(self, train_dataloaders, val_dataloader, num_queries, num_classes, stage_period):
+    def __init__(self, train_dataloaders, val_dataloader, train_num_queries, train_num_classes, val_num_queries,
+                 val_num_classes, stage_period):
         super(REIDDataModule, self).__init__()
         self._train_dataloaders = train_dataloaders
         self._val_dataloader = val_dataloader
-        self._num_queries = num_queries
-        self._num_classes = num_classes
+        self._train_num_queries = train_num_queries
+        self._train_num_classes = train_num_classes
+        self._val_num_queries = val_num_queries
+        self._val_num_classes = val_num_classes
         self._stage_period = stage_period
         self._stage_idx = 0
 
     @property
-    def num_queries(self):
-        return self._num_queries
+    def train_num_queries(self):
+        return self._train_num_queries
 
     @property
-    def num_classes(self):
-        return self._num_classes
+    def train_num_classes(self):
+        return self._train_num_classes
+
+    @property
+    def val_num_queries(self):
+        return self._val_num_queries
+
+    @property
+    def val_num_classes(self):
+        return self._val_num_classes
 
     def train_dataloader(self):
         if self._stage_idx < len(self._stage_period):

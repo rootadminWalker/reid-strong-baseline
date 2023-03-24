@@ -28,7 +28,7 @@ def main(cfg):
     omit_pids = []
     datamodule = make_pl_datamodule(cfg)
 
-    module = PersonReidModule(cfg, datamodule.num_classes, datamodule.num_queries)
+    module = PersonReidModule(cfg, datamodule.train_num_classes, datamodule.train_num_queries)
     module = module.load_from_checkpoint(cfg.MODEL.PRETRAIN_PATH)
     module.to('cuda:0')
     module.eval()

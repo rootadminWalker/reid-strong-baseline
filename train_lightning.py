@@ -67,7 +67,11 @@ def train(cfg):
     if cfg.MODEL.PRETRAIN_CHOICE == 'self':
         checkpoint_path = cfg.MODEL.PRETRAIN_PATH
 
-    module = PersonReidModule(cfg, num_classes=datamodule.num_classes, num_queries=datamodule.num_queries)
+    module = PersonReidModule(
+        cfg=cfg,
+        train_num_classes=datamodule.train_num_classes,
+        val_num_queries=datamodule.val_num_queries
+    )
     trainer = pl.Trainer(
         accelerator=cfg.MODEL.DEVICE,
         devices=list(map(int, cfg.MODEL.DEVICE_ID)),

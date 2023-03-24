@@ -11,20 +11,20 @@ from utils.reid_metric import R1_mAP
 
 
 class PersonReidModule(pl.LightningModule):
-    def __init__(self, cfg, num_classes, num_queries):
+    def __init__(self, cfg, train_num_classes, val_num_queries):
         super(PersonReidModule, self).__init__()
         self.automatic_optimization = False
 
         self.save_hyperparameters()
         self.cfg = cfg
 
-        self.model = build_model(cfg, num_classes)
-        self.loss, self.center_criterion, self.classification_head = make_loss_with_center(cfg, num_classes)
+        self.model = build_model(cfg, train_num_classes)
+        self.loss, self.center_criterion, self.classification_head = make_loss_with_center(cfg, train_num_classes)
         # self.criteria = Criteria(cfg, num_classes)
         # self.classification_head = self.criteria.get_criterion_for_optimizer_adding('classification')
         # self.center_criterion = self.criteria.get_criterion_for_optimizer_adding('center')
         # self.loss, self.center_criterion, _ = make_loss_with_center(cfg, num_classes)
-        self.metric = R1_mAP(num_queries, max_rank=50, feat_norm=cfg.TEST.FEAT_NORM)
+        self.metric = R1_mAP(val_num_queries, max_rank=50, feat_norm=cfg.TEST.FEAT_NORM)
         self.console = self.__setup_console_logging()
 
     def forward(self, x):
