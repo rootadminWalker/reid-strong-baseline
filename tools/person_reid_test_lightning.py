@@ -80,10 +80,10 @@ def main(cfg):
                 crop_image = Image.fromarray(crop_image)
                 blob = transforms(crop_image).to(device).unsqueeze(0)
                 embedding = model(blob).detach()
-                front_dist = calc_euclidean(embedding, init_datas[0].init_vector) / 100
-                back_dist = calc_euclidean(embedding, init_datas[1].init_vector) / 100
-                front_dist1 = calc_euclidean(embedding, init_datas[2].init_vector) / 100
-                back_dist1 = calc_euclidean(embedding, init_datas[3].init_vector) / 100
+                front_dist = calc_euclidean(embedding, init_datas[0].init_vector)
+                back_dist = calc_euclidean(embedding, init_datas[1].init_vector)
+                front_dist1 = calc_euclidean(embedding, init_datas[2].init_vector)
+                back_dist1 = calc_euclidean(embedding, init_datas[3].init_vector)
                 threshold = 1.5
                 yes = front_dist <= threshold or back_dist <= threshold or front_dist1 <= threshold or back_dist1 <= threshold
                 print(front_dist, back_dist, front_dist1, back_dist1)
