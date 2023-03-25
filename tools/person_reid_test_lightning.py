@@ -7,7 +7,9 @@ import torch
 from PIL import Image
 from cv_bridge import CvBridge
 from home_robot_msgs.msg import ObjectBoxes
+import sys
 
+sys.path.append('.')
 from data.transforms import build_transforms
 from engine.reid_module import PersonReidModule
 from utils import setup_cli, setup_loggers

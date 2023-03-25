@@ -2,6 +2,7 @@ import argparse
 import os
 from copy import deepcopy
 from dataclasses import dataclass
+import sys
 
 import cv2 as cv
 import rospy
@@ -12,6 +13,7 @@ from home_robot_msgs.msg import ObjectBoxes
 from torch.backends import cudnn
 from torchinfo import summary
 
+sys.path.append('.')
 from config import cfg
 from data.transforms import build_transforms
 from modeling import build_model

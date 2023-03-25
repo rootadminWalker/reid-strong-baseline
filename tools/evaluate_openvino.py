@@ -1,3 +1,5 @@
+import sys
+
 import cv2 as cv
 import numpy as np
 import pytorch_lightning as pl
@@ -5,6 +7,7 @@ import torch
 import torchvision.transforms as T
 from pytorch_lightning.callbacks import RichProgressBar
 
+sys.path.append('.')
 from data import make_val_dataset
 from engine.reid_module import PersonReidModule
 from utils import setup_cli, setup_loggers

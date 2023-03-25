@@ -1,10 +1,12 @@
 import os
+import sys
 from collections import defaultdict
 
 import numpy as np
 import plotly.graph_objects as go
 from sklearn.decomposition import PCA
 
+sys.path.append('.')
 from data import make_pl_datamodule
 from engine.reid_module import PersonReidModule
 from utils import setup_cli, setup_loggers

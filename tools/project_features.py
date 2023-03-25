@@ -1,4 +1,5 @@
 import os
+import sys
 from collections import defaultdict
 
 import numpy as np
@@ -6,6 +7,7 @@ import plotly.graph_objects as go
 import torch
 from sklearn.decomposition import PCA
 
+sys.path.append('.')
 from data import make_pl_datamodule
 from modeling import build_model
 from utils import setup_cli, setup_loggers
