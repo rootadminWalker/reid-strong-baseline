@@ -54,9 +54,9 @@ class REIDDataModule(pl.LightningDataModule):
 
 
 def make_val_dataset(cfg, base_dataset=None):
-    if cfg.DATASETS.VAL_DATASET_NAMES is not None:
+    if cfg.DATASETS.VAL_NAMES is not None:
         CD_dataset = init_dataset(
-            cfg.DATASETS.VAL_DATASET_NAMES,
+            cfg.DATASETS.VAL_NAMES,
             root=cfg.DATASETS.VAL_ROOT,
             aug_per_image=cfg.SOLVER.AUG_PER_IMG
         )
@@ -65,7 +65,7 @@ def make_val_dataset(cfg, base_dataset=None):
             CD_dataset = base_dataset
         else:
             CD_dataset = init_dataset(
-                cfg.DATASETS.TRAIN_DATASET_NAMES,
+                cfg.DATASETS.TRAIN_NAMES,
                 root=cfg.DATASETS.TRAIN_ROOT,
                 aug_per_image=cfg.SOLVER.AUG_PER_IMG
             )
@@ -90,7 +90,7 @@ def make_data_loaders_with_stages(cfg):
     color_space = cfg.DATALOADER.COLOR_SPACE
     num_workers = cfg.DATALOADER.NUM_WORKERS
     base_dataset = init_dataset(
-        cfg.DATASETS.TRAIN_DATASET_NAMES,
+        cfg.DATASETS.TRAIN_NAMES,
         root=cfg.DATASETS.TRAIN_ROOT,
         aug_per_image=cfg.SOLVER.AUG_PER_IMG
     )
