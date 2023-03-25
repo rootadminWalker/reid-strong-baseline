@@ -98,6 +98,7 @@ def train(cfg):
 
 def main():
     cfg, args = setup_cli()
+    print(cfg)
     train(cfg)
 
 
