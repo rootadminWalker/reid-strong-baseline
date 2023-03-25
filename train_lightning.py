@@ -14,7 +14,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from data import make_pl_datamodule
 from engine.reid_module import PersonReidModule
 from solver import build_warmup_lr, build_direct_set_lr
-from utils import setup_cli, setup_loggers
+from utils import setup_cli
 
 
 def train(cfg):
@@ -98,7 +98,6 @@ def train(cfg):
 
 def main():
     cfg, args = setup_cli()
-    logger = setup_loggers(args, cfg.OUTPUT_DIR)
     train(cfg)
 
 

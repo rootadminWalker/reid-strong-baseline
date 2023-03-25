@@ -38,10 +38,10 @@ def setup_cli():
     cfg.TB_LOG_DIR = tb_logs_path
     cfg.freeze()
 
-    if cfg.MODE == "train":
-        if output_dir and not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-            os.makedirs(tb_logs_path)
+    # if cfg.MODE == "train":
+    #     if output_dir and not os.path.exists(output_dir):
+    #         os.makedirs(output_dir)
+    #         os.makedirs(tb_logs_path)
 
     return cfg, args
 
