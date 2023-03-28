@@ -87,8 +87,6 @@ def make_data_loaders_with_stages(cfg):
         f"but got {cfg.SOLVER.STAGE_TRANSFORMS} and {cfg.SOLVER.STAGE_PERIOD} "
     train_loaders = []
 
-    color_space = cfg.DATALOADER.COLOR_SPACE
-    num_workers = cfg.DATALOADER.NUM_WORKERS
     base_dataset = init_dataset(
         cfg.DATASETS.TRAIN_NAMES,
         root=cfg.DATASETS.TRAIN_ROOT,
@@ -96,31 +94,14 @@ def make_data_loaders_with_stages(cfg):
     )
     train_num_classes = base_dataset.num_train_pids
     val_set, val_loader, val_num_queries, val_num_classes = make_val_dataset(cfg, base_dataset=base_dataset)
-    # if cfg.DATASETS.VAL_DATASET_NAMES[0] is not None:
-    #     CD_dataset = init_dataset(
-    #         cfg.DATASETS.VAL_DATASET_NAMES,
-    #         root=cfg.DATASETS.VAL_ROOT,
-    #         aug_per_image=cfg.SOLVER.AUG_PER_IMG
-    #     )
-    # else:
-    #     CD_dataset = base_dataset
-    #
-
-    #
-    # val_transforms = build_transforms_stage(cfg, is_train=False)
-    # val_set = ImageDataset(CD_dataset.query + CD_dataset.gallery, color_space, transform=val_transforms)
-    # val_loader = DataLoader(
-    #     val_set, batch_size=cfg.TEST.IMS_PER_BATCH, shuffle=False, num_workers=num_workers,
-    #     collate_fn=test_collate_fn
-    # )
 
     for st_idx in range(len(cfg.SOLVER.STAGE_TRANSFORMS) + 1):
         stage_transforms = cfg.SOLVER.STAGE_TRANSFORMS[:st_idx]
         train_transforms = build_transforms_stage(cfg, stage_transforms=stage_transforms, is_train=True)
-        train_set = ImageDataset(base_dataset.train, color_space, transform=train_transforms)
+        train_set = ImageDataset(base_dataset.train, cfg.DATALOADER.COLOR_SPACE, transform=train_transforms)
         if cfg.DATALOADER.SAMPLER == 'softmax':
             train_loader = DataLoader(
-                train_set, batch_size=cfg.SOLVER.IMS_PER_BATCH, shuffle=True, num_workers=num_workers,
+                train_set, batch_size=cfg.SOLVER.IMS_PER_BATCH, shuffle=True, num_workers=cfg.DATALOADER.NUM_WORKERS,
                 collate_fn=train_collate_fn
             )
         else:
