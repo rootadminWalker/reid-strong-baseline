@@ -2,7 +2,6 @@ MODE: "train"
 MODEL:
   DEVICE: "gpu"
   PRETRAIN_CHOICE: 'imagenet'
-  # PRETRAIN_PATH: '/home/matthew/.cache/torch/hub/checkpoints/resnet50-0676ba61.pth'
   METRIC_LOSS_TYPE: 'am_triplet_center'
   IF_LABELSMOOTH: 'on'
   IF_WITH_CENTER: 'yes'
@@ -29,7 +28,6 @@ SOLVER:
   BASE_LR: 0.0004
 
   MARGIN: 6.0
-  CLUSTER_MARGIN: 0.3
 
   CENTER_LR: 0.5
   CENTER_LOSS_WEIGHT: 0.0005
@@ -54,10 +52,9 @@ SOLVER:
 #  EVAL_PERIOD: 1
   EVAL_INTERVAL: 738
 
-  AM_S: 30
+  AM_S: 30.
   AM_M: 0.35
   ID_EPSILON: 0.1
-  NORM_CLASSIFIER_W: True
   CLASSIFICATION_LOSS_WEIGHT: 1.0
 
   STAGE_TRANSFORMS: []

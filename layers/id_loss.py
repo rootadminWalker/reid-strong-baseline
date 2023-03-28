@@ -1,6 +1,9 @@
+import math
+
 import torch
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
+
 from utils import weights_init_classifier
 
 
@@ -58,7 +61,8 @@ class AMSoftmaxLoss(nn.Module):
     """
     Original code by ppriyank@github.com
     """
-    def __init__(self, in_features, s=30, m=0.35, num_classes=625, epsilon=0.1):
+
+    def __init__(self, in_features, s=30., m=0.35, num_classes=625, epsilon=0.1):
         super(AMSoftmaxLoss, self).__init__()
         self.in_features = in_features
         self.s = s
@@ -87,3 +91,54 @@ class AMSoftmaxLoss(nn.Module):
         s_features = self.s * features
         log_probs = self.CrossEntropy(s_features, labels)
         return log_probs
+
+
+class CurricularFace(nn.Module):
+    """
+    CurricularFace: Adaptive Curriculum Learning Loss for Deep Face Recognition
+    Yuge Huang, Yuhan Wang, Ying Tai, Xiaoming Liu, Pengcheng Shen, Shaoxin Li, Jilin Li, Feiyue Huang
+
+    Code by the original author: HuangYG123@github.com
+    """
+    def __init__(self, in_features, out_features, m=0.5, s=64.):
+        super(CurricularFace, self).__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.m = m
+        self.s = s
+        self.cos_m = math.cos(m)
+        self.sin_m = math.sin(m)
+        self.threshold = math.cos(math.pi - m)
+        self.mm = math.sin(math.pi - m) * m
+        self.kernel = nn.Parameter(torch.Tensor(in_features, out_features))
+        self.register_buffer('t', torch.zeros(1))
+        nn.init.normal_(self.kernel, std=0.01)
+
+    @staticmethod
+    def l2_norm(input, axis=1):
+        norm = torch.norm(input, 2, axis, True)
+        output = torch.div(input, norm)
+
+        return output
+
+    def forward(self, embbedings, label):
+        embbedings = self.l2_norm(embbedings, axis=1)
+        kernel_norm = self.l2_norm(self.kernel, axis=0)
+        cos_theta = torch.mm(embbedings, kernel_norm)
+        cos_theta = cos_theta.clamp(-1, 1)  # for numerical stability
+        with torch.no_grad():
+            origin_cos = cos_theta.clone()
+        target_logit = cos_theta[torch.arange(0, embbedings.size(0)), label].view(-1, 1)
+
+        sin_theta = torch.sqrt(1.0 - torch.pow(target_logit, 2))
+        cos_theta_m = target_logit * self.cos_m - sin_theta * self.sin_m  # cos(target+margin)
+        mask = cos_theta > cos_theta_m
+        final_target_logit = torch.where(target_logit > self.threshold, cos_theta_m, target_logit - self.mm)
+
+        hard_example = cos_theta[mask]
+        with torch.no_grad():
+            self.t = target_logit.mean() * 0.01 + (1 - 0.01) * self.t
+        cos_theta[mask] = hard_example * (self.t + hard_example)
+        cos_theta.scatter_(1, label.view(-1, 1).long(), final_target_logit)
+        output = cos_theta * self.s
+        return output, origin_cos * self.s

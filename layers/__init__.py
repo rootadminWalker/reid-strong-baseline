@@ -3,17 +3,16 @@
 @author:  liaoxingyu
 @contact: sherlockliao01@gmail.com
 """
+import warnings
 
-import torch.nn.functional as F
-from pytorch_metric_learning.losses import CentroidTripletLoss
+from pytorch_metric_learning.losses import CentroidTripletLoss, ArcFaceLoss, SubCenterArcFaceLoss
 from pytorch_metric_learning.reducers import DoNothingReducer
 
 from .center_loss import CenterLoss
-from .id_loss import CrossEntropyHead, AMSoftmaxLoss
-# from .tmp import AMSoftmaxLoss
+from .id_loss import CrossEntropyHead, AMSoftmaxLoss, CurricularFace
 from .triplet_loss import TripletLoss, EuclideanDistance
 
-d_l = {'am': 0, 'CTL': 1, 'triplet': 2, 'center': 3}
+d_l = {'am': 0, 'arcface': 1, 'sub-arcface': 2, 'curricularface': 3, 'CTL': 4, 'triplet': 5, 'center': 6}
 
 
 def center_loss(cfg, num_classes, feat_dim):
@@ -35,54 +34,60 @@ def CTL(cfg, num_classes, feat_dim):
     return ctl
 
 
-# def id_loss(cfg, num_classes, feat_dim):
-#     if cfg.MODEL.IF_LABELSMOOTH == 'on':
-#         if 'am' in cfg.MODEL.METRIC_LOSS_TYPE:
-#             xent = AMSoftmaxLoss(s=cfg.SOLVER.AM_S, m=cfg.SOLVER.AM_M, num_classes=num_classes,
-#                                  epsilon=cfg.SOLVER.ID_EPSILON)
-#         else:
-#             xent = CrossEntropyLabelSmooth(num_classes=num_classes, epsilon=cfg.SOLVER.ID_EPSILON)  # new add by luo
-#         print("label smooth on, ", end='')
-#     else:
-#         if 'am' in cfg.MODEL.METRIC_LOSS_TYPE:
-#             xent = AMSoftmaxLoss(num_classes=num_classes, epsilon=0)
-#         else:
-#             xent = F.cross_entropy
-#
-#     return xent
-
-
 def id_loss(cfg, num_classes, feat_dim):
     _biasON = cfg.MODEL.NECK != 'bnneck'
-    if cfg.MODEL.IF_LABELSMOOTH == 'on':
-        if 'am' in cfg.MODEL.METRIC_LOSS_TYPE:
-            # xent = AMSoftmaxLoss(s=cfg.SOLVER.AM_S, m=cfg.SOLVER.AM_M, num_classes=num_classes,
-            #                      epsilon=cfg.SOLVER.ID_EPSILON)
-            xent = AMSoftmaxLoss(in_features=feat_dim, s=cfg.SOLVER.AM_S, m=cfg.SOLVER.AM_M, num_classes=num_classes,
-                                 epsilon=cfg.SOLVER.ID_EPSILON)
-        else:
-            xent = CrossEntropyHead(in_features=feat_dim, num_classes=num_classes,
-                                    epsilon=cfg.SOLVER.ID_EPSILON, bias=_biasON)  # new add by luo
-        print("label smooth on, ", end='')
+    if 'am' in cfg.MODEL.METRIC_LOSS_TYPE:
+        xent = AMSoftmaxLoss(
+            in_features=feat_dim,
+            s=cfg.SOLVER.AM_S,
+            m=cfg.SOLVER.AM_M,
+            num_classes=num_classes,
+            epsilon=cfg.SOLVER.ID_EPSILON
+        )
+    elif 'arcface' in cfg.MODEL.METRIC_LOSS_TYPE:
+        warnings.warn(f"Loss ArcFace does not support label smooth", UserWarning)
+        xent = ArcFaceLoss(
+            embedding_size=feat_dim,
+            scale=cfg.SOLVER.AM_S,
+            margin=cfg.SOLVER.AM_M,
+            num_classes=num_classes
+        )
+    elif 'sub-arcface' in cfg.MODEL.METRIC_LOSS_TYPE:
+        warnings.warn(f"Loss Sub-center ArcFace does not support label smooth", UserWarning)
+        xent = SubCenterArcFaceLoss(
+            embedding_size=feat_dim,
+            scale=cfg.SOLVER.AM_S,
+            margin=cfg.SOLVER.AM_M,
+            num_classes=num_classes,
+            sub_centers=cfg.SOLVER.AM_SUB_CENTERS
+        )
+    elif 'curricularface' in cfg.MODEL.METRIC_LOSS_TYPE:
+        warnings.warn(f"Loss CurricularFace does not support label smooth", UserWarning)
+        xent = CurricularFace(
+            in_features=feat_dim,
+            s=cfg.SOLVER.AM_S,
+            m=cfg.SOLVER.AM_M,
+            out_features=num_classes
+        )
     else:
-        if 'am' in cfg.MODEL.METRIC_LOSS_TYPE:
-            # xent = AMSoftmaxLoss(s=cfg.SOLVER.AM_S, m=cfg.SOLVER.AM_M, num_classes=num_classes)
-            xent = AMSoftmaxLoss(in_features=feat_dim, s=cfg.SOLVER.AM_S, m=cfg.SOLVER.AM_M, num_classes=num_classes)
-        else:
-            xent = CrossEntropyHead(in_features=feat_dim, num_classes=num_classes,
-                                           bias=_biasON)
+        xent = CrossEntropyHead(in_features=feat_dim, num_classes=num_classes,
+                                epsilon=cfg.SOLVER.ID_EPSILON, bias=_biasON)  # new add by luo
 
     return xent
 
 
 def check_loss_type_valid(loss_type_str):
+    valid = True
     s = loss_type_str.split('_')
     for idx in range(len(s) - 1):
-        curr_ = d_l[s[idx]]
-        next_ = d_l[s[idx + 1]]
-        if curr_ > next_:
-            return False
-    return True
+        try:
+            curr_ = d_l[s[idx]]
+            next_ = d_l[s[idx + 1]]
+            if curr_ > next_:
+                valid = False
+        except KeyError:
+            valid = False
+    return valid
 
 
 def extract_loss_names(loss_type_str):

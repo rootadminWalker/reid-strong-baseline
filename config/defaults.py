@@ -178,9 +178,12 @@ _C.SOLVER.MIN_VAL_INTERVAL_CHECK = 10
 # see 2 images per batch
 _C.SOLVER.IMS_PER_BATCH = 64
 
-# Hyperparameter s and m of AM-softmax
-_C.SOLVER.AM_S = 30
+# Hyperparameter s and m of Angular Margin family losses
+_C.SOLVER.AM_S = 30.
 _C.SOLVER.AM_M = 0.35
+
+# This Hyperparameter is only for the sub-center angular loss families
+_C.SOLVER.AM_SUB_CENTERS = 3
 
 # Whether to normalize the weights of the last layer, used for am softmax loss
 _C.SOLVER.NORM_CLASSIFIER_W = False

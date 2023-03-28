@@ -53,7 +53,7 @@ class REIDDataModule(pl.LightningDataModule):
         return self._val_dataloader
 
 
-def make_val_dataset(cfg, base_dataset=None):
+def make_val_dataset(cfg, base_dataset):
     if cfg.DATASETS.VAL_NAMES is not None:
         CD_dataset = init_dataset(
             cfg.DATASETS.VAL_NAMES,
@@ -61,21 +61,12 @@ def make_val_dataset(cfg, base_dataset=None):
             aug_per_image=cfg.SOLVER.AUG_PER_IMG
         )
     else:
-        if base_dataset is not None:
-            CD_dataset = base_dataset
-        else:
-            CD_dataset = init_dataset(
-                cfg.DATASETS.TRAIN_NAMES,
-                root=cfg.DATASETS.TRAIN_ROOT,
-                aug_per_image=cfg.SOLVER.AUG_PER_IMG
-            )
-
-    num_workers = cfg.DATALOADER.NUM_WORKERS
+        CD_dataset = base_dataset
 
     val_transforms = build_transforms_stage(cfg, is_train=False)
     val_set = ImageDataset(CD_dataset.query + CD_dataset.gallery, cfg.DATALOADER.COLOR_SPACE, transform=val_transforms)
     val_loader = DataLoader(
-        val_set, batch_size=cfg.TEST.IMS_PER_BATCH, shuffle=False, num_workers=num_workers,
+        val_set, batch_size=cfg.TEST.IMS_PER_BATCH, shuffle=False, num_workers=cfg.DATALOADER.NUM_WORKERS,
         collate_fn=test_collate_fn
     )
     return val_set, val_loader, len(CD_dataset.query), CD_dataset.num_train_pids
@@ -93,7 +84,7 @@ def make_data_loaders_with_stages(cfg):
         aug_per_image=cfg.SOLVER.AUG_PER_IMG
     )
     train_num_classes = base_dataset.num_train_pids
-    val_set, val_loader, val_num_queries, val_num_classes = make_val_dataset(cfg, base_dataset=base_dataset)
+    val_set, val_loader, val_num_queries, val_num_classes = make_val_dataset(cfg, base_dataset)
 
     for st_idx in range(len(cfg.SOLVER.STAGE_TRANSFORMS) + 1):
         stage_transforms = cfg.SOLVER.STAGE_TRANSFORMS[:st_idx]
