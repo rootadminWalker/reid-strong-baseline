@@ -17,20 +17,20 @@ d_l = {'am': 0, 'arcface': 1, 'sub-arcface': 2, 'curricularface': 3, 'CTL': 4, '
 
 def center_loss(cfg, num_classes, feat_dim):
     center_criterion = CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)  # center loss
-    print('\t', center_criterion)
+    print(center_criterion)
     return center_criterion
 
 
 def triplet_loss(cfg, num_classes, feat_dim):
     triplet = TripletLoss(cfg.SOLVER.MARGIN)  # triplet loss
-    print('\t', triplet)
+    print(triplet)
     return triplet
 
 
 def CTL(cfg, num_classes, feat_dim):
     distance = EuclideanDistance()
     ctl = CentroidTripletLoss(margin=cfg.SOLVER.MARGIN, distance=distance, reducer=DoNothingReducer())
-    print('\t', ctl)
+    print(ctl)
     return ctl
 
 
@@ -107,15 +107,11 @@ def make_loss_with_center(cfg, num_classes):  # modified by gu
     print("Criterions: ")
     print("-----------------")
     if 'center' in cfg.MODEL.METRIC_LOSS_TYPE:
-        center_criterion = CenterLoss(num_classes=num_classes, feat_dim=feat_dim, use_gpu=True)  # center loss
-        print(center_criterion)
+        center_criterion = center_loss(cfg, num_classes, feat_dim)
     if 'triplet' in cfg.MODEL.METRIC_LOSS_TYPE:
-        triplet = TripletLoss(cfg.SOLVER.MARGIN)  # triplet loss
-        print(triplet)
+        triplet = triplet_loss(cfg, num_classes, feat_dim)
     if 'CTL' in cfg.MODEL.METRIC_LOSS_TYPE:
-        distance = EuclideanDistance()
-        ctl = CentroidTripletLoss(margin=cfg.SOLVER.MARGIN, distance=distance, reducer=DoNothingReducer())
-        print(ctl)
+        ctl = CTL(cfg, num_classes, feat_dim)
 
     xent = id_loss(cfg, num_classes, feat_dim)
     print(xent)
