@@ -3,6 +3,8 @@ import sys
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import RichProgressBar
 
+from data.datasets import init_dataset
+
 sys.path.append('.')
 from data import make_val_dataset
 from engine.reid_module import PersonReidModule
@@ -14,7 +16,12 @@ def get_image_label(image_name):
 
 
 def main(cfg):
-    _, val_loader, val_num_queries, val_num_classes = make_val_dataset(cfg)
+    val_dataset = init_dataset(
+        cfg.DATASETS.TRAIN_NAMES,
+        root=cfg.DATASETS.TRAIN_ROOT,
+        aug_per_image=cfg.SOLVER.AUG_PER_IMG
+    )
+    _, val_loader, val_num_queries, val_num_classes = make_val_dataset(cfg, val_dataset)
 
     model = PersonReidModule(cfg, val_num_classes, val_num_queries)
     model = model.load_from_checkpoint(cfg.MODEL.PRETRAIN_PATH)

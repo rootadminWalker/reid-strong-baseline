@@ -7,6 +7,8 @@ import torch
 import torchvision.transforms as T
 from pytorch_lightning.callbacks import RichProgressBar
 
+from data.datasets import init_dataset
+
 sys.path.append('.')
 from data import make_val_dataset
 from engine.reid_module import PersonReidModule
@@ -32,7 +34,7 @@ class OpenVINOModule(PersonReidModule):
             )
             self.net.setInput(blob)
             feat = self.net.forward()
-            feats.append(torch.tensor(feat))
+            feats.append(torch.tensor(feat, device='cuda:0'))
 
         feats = torch.cat(feats)
         self.metric.update([feats, pids, camids])
@@ -46,7 +48,12 @@ def get_image_label(image_name):
 
 
 def main(cfg):
-    _, val_loader, val_num_queries, val_num_classes = make_val_dataset(cfg)
+    val_dataset = init_dataset(
+        cfg.DATASETS.TRAIN_NAMES,
+        root=cfg.DATASETS.TRAIN_ROOT,
+        aug_per_image=cfg.SOLVER.AUG_PER_IMG
+    )
+    _, val_loader, val_num_queries, val_num_classes, _ = make_val_dataset(cfg, val_dataset)
     val_loader.dataset.transform = T.Compose([
         T.Resize(size=cfg.INPUT.SIZE_TRAIN),
         T.Lambda(lambda x: torch.tensor(np.array(x)))
