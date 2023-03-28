@@ -15,6 +15,7 @@ INPUT:
 
 DATASETS:
   TRAIN_NAMES: ('market1501')
+  VAL_NAMES: ('dukemtmc')
 
 DATALOADER:
   SAMPLER: 'softmax_triplet'
