@@ -7,7 +7,7 @@
 import h5py
 import os.path as osp
 from scipy.io import loadmat
-from scipy.misc import imsave
+import imageio
 
 from utils.iotools import mkdir_if_missing, write_json, read_json
 from .bases import BaseImageDataset
@@ -137,7 +137,7 @@ class CUHK03(BaseImageDataset):
                 img_name = '{:01d}_{:03d}_{:01d}_{:02d}.png'.format(campid + 1, pid + 1, viewid, imgid + 1)
                 img_path = osp.join(save_dir, img_name)
                 if not osp.isfile(img_path):
-                    imsave(img_path, img)
+                    imageio.imwrite(img_path, img)
                 img_paths.append(img_path)
             return img_paths
 
