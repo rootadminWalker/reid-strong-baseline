@@ -132,7 +132,7 @@ def make_loss_with_center(cfg, num_classes):  # modified by gu
             loss_components['dist_an'] = dist_an.detach().mean()
             loss_total += loss_triplet
             if 'CTL' in cfg.MODEL.METRIC_LOSS_TYPE:
-                loss_ctl = ctl(global_feat, targets)['loss']['losses']
+                loss_ctl = ctl(global_feat, targets)['loss']['losses'].mean()
                 loss_components['CTL'] = loss_ctl
                 loss_total += loss_ctl
         else:
