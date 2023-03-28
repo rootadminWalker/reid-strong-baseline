@@ -109,7 +109,7 @@ def make_data_loaders_with_stages(cfg):
                 train_set, batch_size=cfg.SOLVER.IMS_PER_BATCH,
                 sampler=RandomIdentitySampler(base_dataset.train, cfg.SOLVER.IMS_PER_BATCH, cfg.DATALOADER.NUM_INSTANCE,
                                               fixed_epoch_steps=cfg.SOLVER.EVAL_INTERVAL),
-                num_workers=num_workers, collate_fn=train_collate_fn
+                num_workers=cfg.DATALOADER.NUM_WORKERS, collate_fn=train_collate_fn
             )
 
         train_loaders.append(train_loader)
