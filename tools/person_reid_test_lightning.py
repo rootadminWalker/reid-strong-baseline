@@ -86,7 +86,7 @@ def main(cfg):
                 back_dist = calc_euclidean(embedding, init_datas[1].init_vector)
                 front_dist1 = calc_euclidean(embedding, init_datas[2].init_vector)
                 back_dist1 = calc_euclidean(embedding, init_datas[3].init_vector)
-                threshold = 1.5
+                threshold = 1.0
                 yes = front_dist <= threshold or back_dist <= threshold or front_dist1 <= threshold or back_dist1 <= threshold
                 print(front_dist, back_dist, front_dist1, back_dist1)
                 if yes:
