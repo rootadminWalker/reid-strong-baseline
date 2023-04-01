@@ -7,9 +7,8 @@ import torch
 import torchvision.transforms as T
 from pytorch_lightning.callbacks import RichProgressBar
 
-from data.datasets import init_dataset
-
 sys.path.append('.')
+from data.datasets import init_dataset
 from data import make_val_dataset
 from engine.reid_module import PersonReidModule
 from utils import setup_cli, setup_loggers
