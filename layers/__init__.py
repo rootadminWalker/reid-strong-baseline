@@ -135,9 +135,9 @@ def make_loss_with_center(cfg, num_classes):  # modified by gu
             loss_ctl = ctl(global_feat, targets)['loss']['losses'].mean()
             loss_components['CTL'] = loss_ctl
             loss_total += loss_ctl
-        else:
-            raise ValueError('expected METRIC_LOSS_TYPE with center should be center, triplet_center'
-                             'but got {}'.format(cfg.MODEL.METRIC_LOSS_TYPE))
+        # else:
+        #     raise ValueError('expected METRIC_LOSS_TYPE with center should be center, triplet_center'
+        #                      'but got {}'.format(cfg.MODEL.METRIC_LOSS_TYPE))
 
         return loss_total, loss_components
 
