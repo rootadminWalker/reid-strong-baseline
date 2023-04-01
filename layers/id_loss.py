@@ -70,7 +70,7 @@ class AMSoftmaxLoss(nn.Module):
         self.num_classes = num_classes
         self.CrossEntropy = CrossEntropyLabelSmooth(self.num_classes, epsilon=epsilon)
         # TODO: Remove this .cuda() after making the combined loss function into an module
-        self.fc = nn.Linear(self.in_features, self.num_classes, bias=False).cuda()
+        self.fc = nn.Linear(self.in_features, self.num_classes, bias=False)
         self.fc.apply(weights_init_classifier)
 
     def forward(self, x, labels):

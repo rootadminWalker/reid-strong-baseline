@@ -111,13 +111,13 @@ def make_loss_with_center(cfg, num_classes):  # modified by gu
     print("Criterions: ")
     print("-----------------")
     if 'center' in cfg.MODEL.METRIC_LOSS_TYPE:
-        center_criterion = center_loss(cfg, num_classes, feat_dim)
+        center_criterion = center_loss(cfg, num_classes, feat_dim).cuda()
     if 'triplet' in cfg.MODEL.METRIC_LOSS_TYPE:
         triplet = triplet_loss(cfg, num_classes, feat_dim)
     if 'CTL' in cfg.MODEL.METRIC_LOSS_TYPE:
         ctl = CTL(cfg, num_classes, feat_dim)
 
-    xent = id_loss(cfg, num_classes, feat_dim)
+    xent = id_loss(cfg, num_classes, feat_dim).cuda()
     print(xent)
     print("numclasses:", num_classes)
 
