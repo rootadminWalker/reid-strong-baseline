@@ -9,7 +9,7 @@ from pytorch_metric_learning.losses import CentroidTripletLoss, ArcFaceLoss, Sub
 from pytorch_metric_learning.reducers import DoNothingReducer
 
 from .center_loss import CenterLoss
-from .id_loss import CrossEntropyHead, AMSoftmaxLoss, CurricularFace
+from .id_loss import CrossEntropyHead, AMSoftmaxLoss, CurricularFace, CrossEntropyLabelSmooth
 from .triplet_loss import TripletLoss, EuclideanDistance
 
 d_l = {'am': 0, 'arcface': 1, 'sub-arcface': 2, 'curricularface': 3, 'CTL': 4, 'triplet': 5, 'center': 6}
@@ -36,8 +36,8 @@ def CTL(cfg, num_classes, feat_dim):
 
 def id_loss(cfg, num_classes, feat_dim):
     _biasON = cfg.MODEL.NECK != 'bnneck'
-    xent = CrossEntropyHead(in_features=feat_dim, num_classes=num_classes,
-                            epsilon=cfg.SOLVER.ID_EPSILON, bias=_biasON)
+    xent = CrossEntropyLabelSmooth(num_classes=num_classes,
+                                   epsilon=cfg.SOLVER.ID_EPSILON)
     if 'am' in cfg.MODEL.METRIC_LOSS_TYPE:
         classification = AMSoftmaxLoss(
             in_features=feat_dim,
@@ -73,7 +73,8 @@ def id_loss(cfg, num_classes, feat_dim):
             out_features=num_classes
         )
     else:
-        classification = xent  # new add by luo
+        classification = CrossEntropyHead(in_features=feat_dim, num_classes=num_classes,
+                                          epsilon=cfg.SOLVER.ID_EPSILON, bias=_biasON)  # new add by luo
 
     return classification
 
