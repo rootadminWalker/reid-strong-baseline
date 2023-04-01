@@ -6,7 +6,7 @@
 import warnings
 
 from pytorch_metric_learning.losses import CentroidTripletLoss, ArcFaceLoss, SubCenterArcFaceLoss
-from pytorch_metric_learning.reducers import DoNothingReducer
+from pytorch_metric_learning.reducers import DoNothingReducer, SumReducer
 
 from .center_loss import CenterLoss
 from .id_loss import CrossEntropyHead, AMSoftmaxLoss, CurricularFace, CrossEntropyLabelSmooth
@@ -52,7 +52,8 @@ def id_loss(cfg, num_classes, feat_dim):
             embedding_size=feat_dim,
             scale=cfg.SOLVER.AM_S,
             margin=cfg.SOLVER.AM_M,
-            num_classes=num_classes
+            num_classes=num_classes,
+            reducer=SumReducer()
         )
         classification.cross_entropy = xent
     elif 'sub-arcface' in cfg.MODEL.METRIC_LOSS_TYPE:
