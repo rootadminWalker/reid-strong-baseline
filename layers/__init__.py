@@ -11,6 +11,7 @@ from pytorch_metric_learning.reducers import DoNothingReducer, SumReducer
 from .center_loss import CenterLoss
 from .id_loss import CrossEntropyHead, AMSoftmaxLoss, CurricularFace, CrossEntropyLabelSmooth
 from .triplet_loss import TripletLoss, EuclideanDistance
+from .GeM import GeneralizedMeanPooling
 
 d_l = {'am': 0, 'arcface': 1, 'sub-arcface': 2, 'curricularface': 3, 'CTL': 4, 'triplet': 5, 'center': 6}
 

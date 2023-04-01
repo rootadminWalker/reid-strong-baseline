@@ -7,9 +7,8 @@ import torch
 import torchvision.transforms as T
 from pytorch_lightning.callbacks import RichProgressBar
 
-from data.datasets import init_dataset
-
 sys.path.append('.')
+from data.datasets import init_dataset
 from data import make_val_dataset
 from engine.reid_module import PersonReidModule
 from utils import setup_cli, setup_loggers
@@ -49,11 +48,11 @@ def get_image_label(image_name):
 
 def main(cfg):
     val_dataset = init_dataset(
-        cfg.DATASETS.TRAIN_NAMES,
-        root=cfg.DATASETS.TRAIN_ROOT,
+        cfg.DATASETS.VAL_NAMES,
+        root=cfg.DATASETS.VAL_ROOT,
         aug_per_image=cfg.SOLVER.AUG_PER_IMG
     )
-    _, val_loader, val_num_queries, val_num_classes, _ = make_val_dataset(cfg, val_dataset)
+    _, val_loader, val_num_queries, val_num_classes = make_val_dataset(cfg, val_dataset)
     val_loader.dataset.transform = T.Compose([
         T.Resize(size=cfg.INPUT.SIZE_TRAIN),
         T.Lambda(lambda x: torch.tensor(np.array(x)))
