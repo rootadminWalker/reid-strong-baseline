@@ -14,6 +14,7 @@ from .backbones.osnet_ain import osnet_ain_x1_0
 from .backbones.resnet import resnet50, resnet101
 from .backbones.resnet_ibn import resnet34_ibn_a, resnet50_ibn_a, resnet101_ibn_a
 from .backbones.resnext_ibn import resnext101_ibn_a
+from layers import GeneralizedMeanPooling
 
 MODELS = {
     "resnet50": resnet50,
@@ -38,16 +39,27 @@ class Baseline(nn.Module):
             print('Loading pretrained ImageNet model......')
         self.base = self.__load_backbone(model_name, last_stride, self.is_pretrain)
 
-        self.gap = nn.AdaptiveAvgPool2d(1)
         self.num_classes = num_classes
         self.neck = neck
         self.neck_feat = neck_feat
         self.in_planes = self.__get_in_planes(model_name)
+        self.pooling = nn.AdaptiveAvgPool2d(1)
 
         if self.neck == 'bnneck':
             self.bottleneck = nn.BatchNorm1d(self.in_planes)
             self.bottleneck.bias.requires_grad_(False)  # no shift
             self.bottleneck.apply(weights_init_kaiming)
+        elif self.neck == 'GeM':
+            self.pooling = GeneralizedMeanPooling(p=3, eps=1e-6)
+            linear = nn.Linear(in_features=self.in_planes, out_features=self.in_planes)
+            bn = nn.BatchNorm1d(self.in_planes)
+            bn.bias.requires_grad_(False)  # no shift
+            PReLU = nn.PReLU()
+
+            bn.apply(weights_init_kaiming)
+            linear.apply(weights_init_kaiming)
+
+            self.bottleneck = nn.Sequential(linear, bn, PReLU)
 
     @staticmethod
     def __get_in_planes(model_name):
@@ -68,7 +80,7 @@ class Baseline(nn.Module):
         return MODELS[model_name](last_stride, pretrained=pretrained)
 
     def base_forward(self, x):
-        global_feat = self.gap(self.base(x))  # (b, 2048, 1, 1)
+        global_feat = self.pooling(self.base(x))  # (b, 2048, 1, 1)
         global_feat = global_feat.view(global_feat.shape[0], -1)
 
         out_feat = global_feat
