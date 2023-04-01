@@ -37,7 +37,7 @@ def CTL(cfg, num_classes, feat_dim):
 def id_loss(cfg, num_classes, feat_dim):
     _biasON = cfg.MODEL.NECK != 'bnneck'
     xent = CrossEntropyHead(in_features=feat_dim, num_classes=num_classes,
-                                epsilon=cfg.SOLVER.ID_EPSILON, bias=_biasON)
+                            epsilon=cfg.SOLVER.ID_EPSILON, bias=_biasON)
     if 'am' in cfg.MODEL.METRIC_LOSS_TYPE:
         classification = AMSoftmaxLoss(
             in_features=feat_dim,
@@ -73,7 +73,7 @@ def id_loss(cfg, num_classes, feat_dim):
             out_features=num_classes
         )
     else:
-        classification = xent# new add by luo
+        classification = xent  # new add by luo
 
     return classification
 
