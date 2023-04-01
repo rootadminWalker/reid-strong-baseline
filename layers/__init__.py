@@ -73,7 +73,7 @@ def id_loss(cfg, num_classes, feat_dim):
             out_features=num_classes
         )
     else:
-        classification =  # new add by luo
+        classification = xent# new add by luo
 
     return classification
 
