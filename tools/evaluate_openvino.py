@@ -52,7 +52,7 @@ def main(cfg):
         root=cfg.DATASETS.VAL_ROOT,
         aug_per_image=cfg.SOLVER.AUG_PER_IMG
     )
-    _, val_loader, val_num_queries, val_num_classes, _ = make_val_dataset(cfg, val_dataset)
+    _, val_loader, val_num_queries, val_num_classes = make_val_dataset(cfg, val_dataset)
     val_loader.dataset.transform = T.Compose([
         T.Resize(size=cfg.INPUT.SIZE_TRAIN),
         T.Lambda(lambda x: torch.tensor(np.array(x)))
