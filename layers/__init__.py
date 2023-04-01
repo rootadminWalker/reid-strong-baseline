@@ -125,16 +125,16 @@ def make_loss_with_center(cfg, num_classes):  # modified by gu
         loss_components['classification'] = loss_classification
         loss_total = loss_center + loss_classification
 
-        if 'triplet_center' in cfg.MODEL.METRIC_LOSS_TYPE:
+        if 'triplet' in cfg.MODEL.METRIC_LOSS_TYPE:
             loss_triplet, dist_ap, dist_an = triplet(global_feat, targets)
             loss_components['triplet'] = loss_triplet
             loss_components['dist_ap'] = dist_ap.detach().mean()
             loss_components['dist_an'] = dist_an.detach().mean()
             loss_total += loss_triplet
-            if 'CTL' in cfg.MODEL.METRIC_LOSS_TYPE:
-                loss_ctl = ctl(global_feat, targets)['loss']['losses'].mean()
-                loss_components['CTL'] = loss_ctl
-                loss_total += loss_ctl
+        if 'CTL' in cfg.MODEL.METRIC_LOSS_TYPE:
+            loss_ctl = ctl(global_feat, targets)['loss']['losses'].mean()
+            loss_components['CTL'] = loss_ctl
+            loss_total += loss_ctl
         else:
             raise ValueError('expected METRIC_LOSS_TYPE with center should be center, triplet_center'
                              'but got {}'.format(cfg.MODEL.METRIC_LOSS_TYPE))

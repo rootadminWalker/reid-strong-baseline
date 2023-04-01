@@ -104,19 +104,20 @@ class EuclideanDistance(BaseDistance):
       return euclidean_dist(query_emb, ref_emb)
 
 
-class TripletLoss(object):
+class TripletLoss(nn.Module):
     """Modified from Tong Xiao's open-reid (https://github.com/Cysu/open-reid).
     Related Triplet Loss theory can be found in paper 'In Defense of the Triplet
     Loss for Person Re-Identification'."""
 
     def __init__(self, margin=None):
+        super(TripletLoss, self).__init__()
         self.margin = margin
         if margin is not None:
             self.ranking_loss = nn.MarginRankingLoss(margin=margin)
         else:
             self.ranking_loss = nn.SoftMarginLoss()
 
-    def __call__(self, global_feat, labels, normalize_feature=False):
+    def forward(self, global_feat, labels, normalize_feature=False):
         if normalize_feature:
             global_feat = normalize(global_feat, axis=-1)
         dist_mat = euclidean_dist(global_feat, global_feat)
