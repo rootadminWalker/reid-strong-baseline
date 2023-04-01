@@ -36,8 +36,10 @@ def CTL(cfg, num_classes, feat_dim):
 
 def id_loss(cfg, num_classes, feat_dim):
     _biasON = cfg.MODEL.NECK != 'bnneck'
+    xent = CrossEntropyHead(in_features=feat_dim, num_classes=num_classes,
+                                epsilon=cfg.SOLVER.ID_EPSILON, bias=_biasON)
     if 'am' in cfg.MODEL.METRIC_LOSS_TYPE:
-        xent = AMSoftmaxLoss(
+        classification = AMSoftmaxLoss(
             in_features=feat_dim,
             s=cfg.SOLVER.AM_S,
             m=cfg.SOLVER.AM_M,
@@ -46,15 +48,16 @@ def id_loss(cfg, num_classes, feat_dim):
         )
     elif 'arcface' in cfg.MODEL.METRIC_LOSS_TYPE:
         warnings.warn(f"Loss ArcFace does not support label smooth", UserWarning)
-        xent = ArcFaceLoss(
+        classification = ArcFaceLoss(
             embedding_size=feat_dim,
             scale=cfg.SOLVER.AM_S,
             margin=cfg.SOLVER.AM_M,
             num_classes=num_classes
         )
+        classification.cross_entropy = xent
     elif 'sub-arcface' in cfg.MODEL.METRIC_LOSS_TYPE:
         warnings.warn(f"Loss Sub-center ArcFace does not support label smooth", UserWarning)
-        xent = SubCenterArcFaceLoss(
+        classification = SubCenterArcFaceLoss(
             embedding_size=feat_dim,
             scale=cfg.SOLVER.AM_S,
             margin=cfg.SOLVER.AM_M,
@@ -63,17 +66,16 @@ def id_loss(cfg, num_classes, feat_dim):
         )
     elif 'curricularface' in cfg.MODEL.METRIC_LOSS_TYPE:
         warnings.warn(f"Loss CurricularFace does not support label smooth", UserWarning)
-        xent = CurricularFace(
+        classification = CurricularFace(
             in_features=feat_dim,
             s=cfg.SOLVER.AM_S,
             m=cfg.SOLVER.AM_M,
             out_features=num_classes
         )
     else:
-        xent = CrossEntropyHead(in_features=feat_dim, num_classes=num_classes,
-                                epsilon=cfg.SOLVER.ID_EPSILON, bias=_biasON)  # new add by luo
+        classification =  # new add by luo
 
-    return xent
+    return classification
 
 
 def check_loss_type_valid(loss_type_str):
