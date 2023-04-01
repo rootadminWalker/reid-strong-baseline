@@ -47,7 +47,7 @@ class MSMT17(BaseImageDataset):
             print("=> MSMT17 loaded")
             self.print_dataset_statistics(train, query, gallery)
 
-        self.train = train
+        self.train = train + query + gallery
         self.query = query
         self.gallery = gallery
 
