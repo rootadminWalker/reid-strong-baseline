@@ -43,11 +43,14 @@ class MSMT17(BaseImageDataset):
         #val, num_val_pids, num_val_imgs = self._process_dir(self.train_dir, self.list_val_path)
         query = self._process_dir(self.test_dir, self.list_query_path)
         gallery = self._process_dir(self.test_dir, self.list_gallery_path)
+        # TODO: Turn off this line if the situation is not cross-domain
+        train = train + query + gallery
+
         if verbose:
             print("=> MSMT17 loaded")
             self.print_dataset_statistics(train, query, gallery)
 
-        self.train = train + query + gallery
+        self.train = train
         self.query = query
         self.gallery = gallery
 
