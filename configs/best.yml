@@ -14,8 +14,8 @@ INPUT:
   PADDING: 10
 
 DATASETS:
-  TRAIN_NAMES: ('market1501')
-  VAL_NAMES: ('dukemtmc')
+  TRAIN_NAMES: ('msmt17')
+  VAL_NAMES: ('market1501')
 
 DATALOADER:
   SAMPLER: 'softmax_triplet'
