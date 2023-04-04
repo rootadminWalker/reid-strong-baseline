@@ -5,7 +5,7 @@
 """
 
 import pytorch_lightning as pl
-from rich import Console
+from rich.console import Console
 from torch.utils.data import DataLoader
 
 from .collate_batch import train_collate_fn, test_collate_fn
@@ -13,7 +13,7 @@ from .datasets import init_dataset, ImageDataset
 from .samplers import RandomIdentitySampler  # New add by gu
 from .transforms import build_transforms_stage
 
-print = Console().print
+console = Console()
 
 
 class REIDDataModule(pl.LightningDataModule):
@@ -48,7 +48,7 @@ class REIDDataModule(pl.LightningDataModule):
     def train_dataloader(self):
         if self._stage_idx < len(self._stage_period):
             if self.trainer.current_epoch == self._stage_period[self._stage_idx]:
-                print(
+                console.log(
                     f"Current epoch approached {self._stage_period[self._stage_idx]}"
                     f"\nSwitching to the following transforms:\n {self._train_dataloaders[self._stage_idx + 1].dataset.transform}")
                 self._stage_idx += 1
