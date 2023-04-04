@@ -5,13 +5,13 @@
 """
 import warnings
 
-from pytorch_metric_learning.losses import CentroidTripletLoss, ArcFaceLoss, SubCenterArcFaceLoss
-from pytorch_metric_learning.reducers import DoNothingReducer, SumReducer
+from pytorch_metric_learning.losses import CentroidTripletLoss, SubCenterArcFaceLoss
+from pytorch_metric_learning.reducers import DoNothingReducer
 
+from .GeM import GeneralizedMeanPooling
 from .center_loss import CenterLoss
 from .id_loss import CrossEntropyHead, AMSoftmaxLoss, ArcFace, CurricularFace, CrossEntropyLabelSmooth
 from .triplet_loss import TripletLoss, EuclideanDistance
-from .GeM import GeneralizedMeanPooling
 
 d_l = {'am': 0, 'arcface': 1, 'sub-arcface': 2, 'curricularface': 3, 'CTL': 4, 'triplet': 5, 'center': 6}
 
@@ -49,7 +49,7 @@ def id_loss(cfg, num_classes, feat_dim):
         )
     elif 'arcface' in cfg.MODEL.METRIC_LOSS_TYPE:
         # warnings.warn(f"Loss ArcFace does not support label smooth", UserWarning)
-        classification = ArcFaceLoss(
+        classification = ArcFace(
             in_features=feat_dim,
             out_features=num_classes,
             s=cfg.SOLVER.AM_S,
