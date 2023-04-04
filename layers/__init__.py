@@ -9,7 +9,7 @@ from pytorch_metric_learning.losses import CentroidTripletLoss, ArcFaceLoss, Sub
 from pytorch_metric_learning.reducers import DoNothingReducer, SumReducer
 
 from .center_loss import CenterLoss
-from .id_loss import CrossEntropyHead, AMSoftmaxLoss, CurricularFace, CrossEntropyLabelSmooth
+from .id_loss import CrossEntropyHead, AMSoftmaxLoss, ArcFace, CurricularFace, CrossEntropyLabelSmooth
 from .triplet_loss import TripletLoss, EuclideanDistance
 from .GeM import GeneralizedMeanPooling
 
@@ -42,19 +42,19 @@ def id_loss(cfg, num_classes, feat_dim):
     if 'am' in cfg.MODEL.METRIC_LOSS_TYPE:
         classification = AMSoftmaxLoss(
             in_features=feat_dim,
+            num_classes=num_classes,
             s=cfg.SOLVER.AM_S,
             m=cfg.SOLVER.AM_M,
-            num_classes=num_classes,
             epsilon=cfg.SOLVER.ID_EPSILON
         )
     elif 'arcface' in cfg.MODEL.METRIC_LOSS_TYPE:
-        warnings.warn(f"Loss ArcFace does not support label smooth", UserWarning)
+        # warnings.warn(f"Loss ArcFace does not support label smooth", UserWarning)
         classification = ArcFaceLoss(
-            embedding_size=feat_dim,
-            scale=cfg.SOLVER.AM_S,
-            margin=cfg.SOLVER.AM_M,
-            num_classes=num_classes,
-            reducer=SumReducer()
+            in_features=feat_dim,
+            out_features=num_classes,
+            s=cfg.SOLVER.AM_S,
+            m=cfg.SOLVER.AM_M,
+            epsilon=cfg.SOLVER.ID_EPSILON
         )
         classification.cross_entropy = xent
     elif 'sub-arcface' in cfg.MODEL.METRIC_LOSS_TYPE:
@@ -67,12 +67,13 @@ def id_loss(cfg, num_classes, feat_dim):
             sub_centers=cfg.SOLVER.AM_SUB_CENTERS
         )
     elif 'curricularface' in cfg.MODEL.METRIC_LOSS_TYPE:
-        warnings.warn(f"Loss CurricularFace does not support label smooth", UserWarning)
+        # warnings.warn(f"Loss CurricularFace does not support label smooth", UserWarning)
         classification = CurricularFace(
             in_features=feat_dim,
+            out_features=num_classes,
             s=cfg.SOLVER.AM_S,
             m=cfg.SOLVER.AM_M,
-            out_features=num_classes
+            epsilon=cfg.SOLVER.ID_EPSILON
         )
     else:
         classification = CrossEntropyHead(in_features=feat_dim, num_classes=num_classes,
