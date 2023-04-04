@@ -22,6 +22,7 @@ _C = CN()
 _C.OUTPUT_DIR = ""
 _C.TB_LOG_DIR = ""
 _C.MODE = "train"
+_C.RANDOM_SEED = None
 
 _C.MODEL = CN()
 # Using cuda or cpu for training

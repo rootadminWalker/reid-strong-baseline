@@ -8,6 +8,7 @@
 import os
 
 import pytorch_lightning as pl
+from lightning_fabric.utilities.seed import seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor, RichProgressBar
 from pytorch_lightning.loggers import TensorBoardLogger
 
@@ -18,6 +19,9 @@ from utils import setup_cli
 
 
 def train(cfg):
+    if cfg.RANDOM_SEED is not None:
+        seed_everything(cfg.RANDOM_SEED)
+
     output_dir = cfg.OUTPUT_DIR
     tb_logs_path = cfg.TB_LOG_DIR
 
