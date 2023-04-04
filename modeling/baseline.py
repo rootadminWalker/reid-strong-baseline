@@ -53,7 +53,7 @@ class Baseline(nn.Module):
             self.pooling = GeneralizedMeanPooling(p=3, eps=1e-6)
             linear = nn.Linear(in_features=self.in_planes, out_features=self.in_planes)
             bn = nn.BatchNorm1d(self.in_planes)
-            bn.bias.requires_grad_(False)  # no shift
+            # bn.bias.requires_grad_(False)  # no shift
             PReLU = nn.PReLU()
 
             bn.apply(weights_init_kaiming)
