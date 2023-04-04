@@ -62,12 +62,12 @@ class AMSoftmaxLoss(nn.Module):
     Original code by ppriyank@github.com
     """
 
-    def __init__(self, in_features, s=30., m=0.35, num_classes=625, epsilon=0.0):
+    def __init__(self, in_features, num_classes=625, s=30., m=0.35, epsilon=0.0):
         super(AMSoftmaxLoss, self).__init__()
         self.in_features = in_features
+        self.num_classes = num_classes
         self.s = s
         self.m = m
-        self.num_classes = num_classes
         self.CrossEntropy = CrossEntropyLabelSmooth(self.num_classes, epsilon=epsilon)
         # TODO: Remove this .cuda() after making the combined loss function into an module
         self.fc = nn.Linear(self.in_features, self.num_classes, bias=False)
