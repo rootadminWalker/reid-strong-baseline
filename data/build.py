@@ -5,12 +5,15 @@
 """
 
 import pytorch_lightning as pl
+from rich import Console
 from torch.utils.data import DataLoader
 
 from .collate_batch import train_collate_fn, test_collate_fn
 from .datasets import init_dataset, ImageDataset
 from .samplers import RandomIdentitySampler  # New add by gu
 from .transforms import build_transforms_stage
+
+print = Console().print
 
 
 class REIDDataModule(pl.LightningDataModule):
