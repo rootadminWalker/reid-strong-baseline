@@ -6,7 +6,7 @@
 import warnings
 
 from pytorch_metric_learning.losses import CentroidTripletLoss, SubCenterArcFaceLoss
-from pytorch_metric_learning.reducers import DoNothingReducer
+from pytorch_metric_learning.reducers import MeanReducer
 
 from .GeM import GeneralizedMeanPooling
 from .center_loss import CenterLoss
@@ -30,7 +30,7 @@ def triplet_loss(cfg, num_classes, feat_dim):
 
 def CTL(cfg, num_classes, feat_dim):
     distance = EuclideanDistance()
-    ctl = CentroidTripletLoss(margin=cfg.SOLVER.MARGIN, distance=distance, reducer=DoNothingReducer())
+    ctl = CentroidTripletLoss(margin=cfg.SOLVER.MARGIN, distance=distance, reducer=MeanReducer())
     print(ctl)
     return ctl
 
@@ -138,7 +138,7 @@ def make_loss_with_center(cfg, num_classes):  # modified by gu
             loss_components['dist_an'] = dist_an.detach().mean()
             loss_total += loss_triplet
         if 'CTL' in cfg.MODEL.METRIC_LOSS_TYPE:
-            loss_ctl = ctl(global_feat, targets)['loss']['losses'].mean()
+            loss_ctl = ctl(global_feat, targets)
             loss_components['CTL'] = loss_ctl
             loss_total += loss_ctl
         # else:
