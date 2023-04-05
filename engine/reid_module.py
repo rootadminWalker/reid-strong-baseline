@@ -72,11 +72,13 @@ class PersonReidModule(pl.LightningModule):
         return train_output
 
     def validation_step(self, batch, batch_idx):
+        # pass
         data, pids, camids = batch
         feat = self.model(data)
         self.metric.update([feat, pids, camids])
 
     def on_validation_epoch_end(self):
+        # pass
         cmc, mAP = self.metric.compute()
         mAP = round(mAP * 100, 1)
 

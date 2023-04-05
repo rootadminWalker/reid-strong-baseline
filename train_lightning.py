@@ -79,7 +79,7 @@ def train(cfg):
     trainer = pl.Trainer(
         accelerator=cfg.MODEL.DEVICE,
         devices=list(map(int, cfg.MODEL.DEVICE_ID)),
-        benchmark=True,
+        # benchmark=True,
         logger=logger,
         callbacks=[
             warmup_lr,
@@ -96,6 +96,7 @@ def train(cfg):
         num_sanity_val_steps=0,
         strategy=cfg.SOLVER.STRATEGY,
         num_nodes=cfg.SOLVER.NUM_NODES,
+        reload_dataloaders_every_n_epochs=1
     )
     trainer.fit(module, datamodule=datamodule, ckpt_path=checkpoint_path)
 
