@@ -123,9 +123,13 @@ class ArcFace(nn.Module):
 
         self.cross_entropy = CrossEntropyLabelSmooth(num_classes=self.out_features, epsilon=self.epsilon)
 
-    def forward(self, input, label):
+    def get_cosine(self, x):
+        return F.linear(F.normalize(x), F.normalize(self.weight))
+
+    def forward(self, x, label):
         # --------------------------- cos(theta) & phi(theta) ---------------------------
-        cosine = F.linear(F.normalize(input), F.normalize(self.weight))
+        # cosine = F.linear(F.normalize(x), F.normalize(self.weight))
+        cosine = self.get_cosine(x)
         sine = torch.sqrt((1.0 - torch.pow(cosine, 2)).clamp(0, 1))
         phi = cosine * self.cos_m - sine * self.sin_m
         if self.easy_margin:
@@ -175,14 +179,20 @@ class CurricularFace(nn.Module):
 
         return output
 
-    def forward(self, embbedings, label):
-        embbedings = self.l2_norm(embbedings, axis=1)
+    def get_cosine(self, x):
+        x = self.l2_norm(x, axis=1)
         kernel_norm = self.l2_norm(self.kernel, axis=0)
-        cos_theta = torch.mm(embbedings, kernel_norm)
+        cos_theta = torch.mm(x, kernel_norm)
         cos_theta = cos_theta.clamp(-1, 1)  # for numerical stability
-        with torch.no_grad():
-            origin_cos = cos_theta.clone()
-        target_logit = cos_theta[torch.arange(0, embbedings.size(0)), label].view(-1, 1)
+        return cos_theta
+
+    def forward(self, x, label):
+        # x = self.l2_norm(x, axis=1)
+        # kernel_norm = self.l2_norm(self.kernel, axis=0)
+        # cos_theta = torch.mm(x, kernel_norm)
+        # cos_theta = cos_theta.clamp(-1, 1)  # for numerical stability
+        cos_theta = self.get_cosine(x)
+        target_logit = cos_theta[torch.arange(0, x.size(0)), label].view(-1, 1)
 
         sin_theta = torch.sqrt(1.0 - torch.pow(target_logit, 2))
         cos_theta_m = target_logit * self.cos_m - sin_theta * self.sin_m  # cos(target+margin)
@@ -198,3 +208,42 @@ class CurricularFace(nn.Module):
 
         loss = self.cross_entropy(output, label)
         return loss
+
+
+class SubCenterArcFace(ArcFace):
+    def __init__(self, in_features, out_features, s=64., m=0.5, epsilon=0.0, easy_margin=False, K=3):
+        super(SubCenterArcFace, self).__init__(
+            in_features=in_features,
+            out_features=out_features,
+            s=s,
+            m=m,
+            epsilon=epsilon,
+            easy_margin=easy_margin
+        )
+        self.K = K
+        assert self.K > 1, "You should have more than 1 sub-centers in Sub-center ArcFace." \
+                           "If you don't want any sub-centers, use ArcFace instead."
+
+    def get_cosine(self, x):
+        cosine = super(SubCenterArcFace, self).get_cosine(x)
+        cosine = cosine.view(-1, self.out_features, self.K)
+        cosine, _ = cosine.max(axis=2)
+        return cosine
+
+
+class SubCenterCurricularFace(CurricularFace):
+    def __init__(self, in_features, out_features, s=64., m=0.5, epsilon=0.0, K=3):
+        super(SubCenterCurricularFace, self).__init__(
+            in_features=in_features,
+            out_features=out_features,
+            s=s,
+            m=m,
+            epsilon=epsilon,
+        )
+        self.K = K
+
+    def get_cosine(self, x):
+        cos_theta = super(SubCenterCurricularFace, self).get_cosine(x)
+        cos_theta = cos_theta.view(-1, self.out_features, self.K)
+        cos_theta, _ = cos_theta.max(axis=2)
+        return cos_theta
