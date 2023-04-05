@@ -80,7 +80,7 @@ class PersonReidModule(pl.LightningModule):
         cmc, mAP = self.metric.compute()
         mAP = round(mAP * 100, 1)
 
-        table = Table(f"Validation Results - Epoch: {self.current_epoch}")
+        table = Table(title=f"Validation Results - Epoch: {self.current_epoch}")
         table.add_column("Metric")
         table.add_column("Performance")
 
@@ -88,9 +88,10 @@ class PersonReidModule(pl.LightningModule):
         self.log('mAP', mAP)
         for r in [1, 5, 10]:
             r_cmc = round(cmc[r - 1] * 100, 1)
-            table.add_row("CMC curve", f"Rank-{r:<3}:{r_cmc}%")
+            table.add_row(f"CMC curve Rank-{r:<3}", f"{r_cmc}%")
             self.log(f'rank{r}', r_cmc)
 
+        rich_console.print()
         rich_console.print(table)
 
     def on_train_epoch_end(self):
