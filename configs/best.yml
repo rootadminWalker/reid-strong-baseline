@@ -1,4 +1,5 @@
 MODE: "train"
+RANDOM_SEED: 2023
 MODEL:
   DEVICE: "gpu"
   PRETRAIN_CHOICE: 'imagenet'
