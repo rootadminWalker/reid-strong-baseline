@@ -49,7 +49,7 @@ class REIDDataModule(pl.LightningDataModule):
         if self._stage_idx < len(self._stage_period):
             if self.trainer.current_epoch == self._stage_period[self._stage_idx]:
                 console.log(
-                    f"Current epoch approached {self._stage_period[self._stage_idx]}"
+                    f"\nCurrent epoch approached {self._stage_period[self._stage_idx]}"
                     f"\nSwitching to the following transforms:\n {self._train_dataloaders[self._stage_idx + 1].dataset.transform}")
                 self._stage_idx += 1
         train_dataloader = self._train_dataloaders[self._stage_idx]
