@@ -9,6 +9,11 @@ from solver import make_optimizer_with_center
 from solver.build import build_scheduler
 from utils.reid_metric import R1_mAP
 
+from rich.console import Console
+from rich.table import Table
+
+
+rich_console = Console()
 
 class PersonReidModule(pl.LightningModule):
     def __init__(self, cfg, train_num_classes, val_num_queries):
@@ -75,13 +80,18 @@ class PersonReidModule(pl.LightningModule):
         cmc, mAP = self.metric.compute()
         mAP = round(mAP * 100, 1)
 
-        self.console.info(f"Validation Results - Epoch: {self.current_epoch}")
-        self.console.info(f"mAP: {mAP}%")
+        table = Table(f"Validation Results - Epoch: {self.current_epoch}")
+        table.add_column("Metric")
+        table.add_column("Performance")
+
+        table.add_row("mAP", f"{mAP}%")
         self.log('mAP', mAP)
         for r in [1, 5, 10]:
             r_cmc = round(cmc[r - 1] * 100, 1)
-            self.console.info(f"CMC curve, Rank-{r:<3}:{r_cmc}%")
+            table.add_row("CMC curve", f"Rank-{r:<3}:{r_cmc}%")
             self.log(f'rank{r}', r_cmc)
+
+        rich_console.print(table)
 
     def on_train_epoch_end(self):
         self.lr_schedulers().step()
