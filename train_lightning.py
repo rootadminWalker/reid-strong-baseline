@@ -79,7 +79,7 @@ def train(cfg):
     trainer = pl.Trainer(
         accelerator=cfg.MODEL.DEVICE,
         devices=list(map(int, cfg.MODEL.DEVICE_ID)),
-        # benchmark=True,
+        benchmark=True,
         logger=logger,
         callbacks=[
             warmup_lr,
