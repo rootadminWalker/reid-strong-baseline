@@ -1,6 +1,8 @@
 import logging
 
 import pytorch_lightning as pl
+from rich.console import Console
+from rich.table import Table
 from torch import nn
 
 from layers import make_loss_with_center
@@ -9,11 +11,8 @@ from solver import make_optimizer_with_center
 from solver.build import build_scheduler
 from utils.reid_metric import R1_mAP
 
-from rich.console import Console
-from rich.table import Table
-
-
 rich_console = Console()
+
 
 class PersonReidModule(pl.LightningModule):
     def __init__(self, cfg, train_num_classes, val_num_queries):
