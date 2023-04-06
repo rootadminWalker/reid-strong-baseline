@@ -19,20 +19,23 @@ class OpenVINOModule(PersonReidModule):
         super(OpenVINOModule, self).__init__(cfg, train_num_classes, val_num_queries)
         self.net = cv.dnn.readNet(cfg.MODEL.PRETRAIN_PATH.split('.')[0] + '.bin', cfg.MODEL.PRETRAIN_PATH)
 
+    def forward(self, x):
+        blob = cv.dnn.blobFromImage(
+            x,
+            scalefactor=1.0,
+            mean=(0, 0, 0),
+            swapRB=False,
+            crop=False
+        )
+        self.net.setInput(blob)
+        return self.net.forward()
+
     def validation_step(self, batch, batch_idx):
         data, pids, camids = batch
         data = data.detach().numpy()
         feats = []
         for img in data:
-            blob = cv.dnn.blobFromImage(
-                img,
-                scalefactor=1.0,
-                mean=(0, 0, 0),
-                swapRB=False,
-                crop=False
-            )
-            self.net.setInput(blob)
-            feat = self.net.forward()
+            feat = self.forward(img)
             feats.append(torch.tensor(feat, device='cuda:0'))
 
         feats = torch.cat(feats)
