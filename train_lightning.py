@@ -14,7 +14,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 
 from data import make_pl_datamodule
 from engine.reid_module import PersonReidModule
-from solver import build_warmup_lr, build_direct_set_lr
+from solver import build_warmup_lr, build_direct_set_lr, build_fine_tune
 from utils import setup_cli
 
 
@@ -61,6 +61,18 @@ def train(cfg):
         version=0
     )
 
+    callbacks = [
+        warmup_lr,
+        direct_set_lr,
+        lr_monitor,
+        epoch_checkpoint_cb,
+        top_mAP_checkpoint_cb,
+        top_rank1_checkpoint_cb,
+        RichProgressBar()
+    ]
+    if cfg.SOLVER.UNFREEZE_AT_EPOCH is not None:
+        callbacks.append(build_fine_tune(cfg))
+
     # No center not supported now
     assert cfg.MODEL.IF_WITH_CENTER == 'yes', "Not supported for no center"
 
@@ -81,17 +93,8 @@ def train(cfg):
         devices=list(map(int, cfg.MODEL.DEVICE_ID)),
         benchmark=True,
         logger=logger,
-        callbacks=[
-            warmup_lr,
-            direct_set_lr,
-            lr_monitor,
-            epoch_checkpoint_cb,
-            top_mAP_checkpoint_cb,
-            top_rank1_checkpoint_cb,
-            RichProgressBar()
-        ],
+        callbacks=callbacks,
         max_epochs=cfg.SOLVER.MAX_EPOCHS,
-        # check_val_every_n_epoch=cfg.SOLVER.EVAL_PERIOD,
         val_check_interval=cfg.SOLVER.EVAL_INTERVAL,
         num_sanity_val_steps=0,
         strategy=cfg.SOLVER.STRATEGY,

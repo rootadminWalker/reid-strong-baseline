@@ -7,6 +7,7 @@
 import torch
 
 from .lr_scheduler import WarmupLR, DirectSetLR
+from .fine_tune import FineTuning
 
 
 def make_optimizer_with_center(cfg, model, center_criterion):
@@ -58,3 +59,7 @@ def build_direct_set_lr(cfg):
         direct_steps=cfg.SOLVER.DIRECT_STEPS,
         direct_lrs=cfg.SOLVER.DIRECT_LRS
     )
+
+
+def build_fine_tune(cfg):
+    return FineTuning(unfreeze_at_epoch=cfg.SOLVER.UNFREEZE_AT_EPOCH)

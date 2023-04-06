@@ -199,6 +199,9 @@ _C.SOLVER.STAGE_PERIOD = []
 # n images to augment for each dataset image
 _C.SOLVER.AUG_PER_IMG = 0
 
+# Fine tune unfreeze epoch
+_C.SOLVER.UNFREEZE_AT_EPOCH = None
+
 # This is global, so if we have 8 GPUs and IMS_PER_BATCH = 16, each GPU will
 # see 2 images per batch
 _C.TEST = CN()
