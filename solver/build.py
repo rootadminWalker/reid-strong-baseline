@@ -37,7 +37,7 @@ def build_scheduler(optimizer, cfg):
     elif cfg.SOLVER.LR_SCHEDULER_NAME == "multistep_lr":
         lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
             optimizer, milestones=cfg.SOLVER.STEPS,
-            gamma=cfg.SOLVER.GAMMA, verbose=True
+            gamma=cfg.SOLVER.GAMMA
         )
     else:
         raise NotImplementedError(f"No such scheduler {cfg.SOLVER.LR_SCHEDULER_NAME}")
