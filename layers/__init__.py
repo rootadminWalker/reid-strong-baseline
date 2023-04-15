@@ -13,7 +13,7 @@ from .center_loss import CenterLoss
 from .id_loss import CrossEntropyHead, AMSoftmaxLoss, ArcFace, CurricularFace, CrossEntropyLabelSmooth
 from .triplet_loss import TripletLoss, EuclideanDistance
 
-d_l = {'am': 0, 'arcface': 1, 'sub-arcface': 2, 'curricularface': 3, 'CTL': 4, 'triplet': 5, 'center': 6}
+d_l = {'am': 0, 'arcface': 1, 'sub-center-arcface': 2, 'curricularface': 3, 'CTL': 4, 'triplet': 5, 'center': 6}
 
 
 def center_loss(cfg, num_classes, feat_dim):
@@ -57,7 +57,7 @@ def id_loss(cfg, num_classes, feat_dim):
             epsilon=cfg.SOLVER.ID_EPSILON
         )
         classification.cross_entropy = xent
-    elif 'sub-arcface' in cfg.MODEL.METRIC_LOSS_TYPE:
+    elif 'sub-center-arcface' in cfg.MODEL.METRIC_LOSS_TYPE:
         warnings.warn(f"Loss Sub-center ArcFace does not support label smooth", UserWarning)
         classification = SubCenterArcFaceLoss(
             embedding_size=feat_dim,
