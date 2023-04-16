@@ -15,12 +15,7 @@ def get_image_label(image_name):
 
 
 def main(cfg):
-    val_dataset = init_dataset(
-        cfg.DATASETS.VAL_NAMES,
-        root=cfg.DATASETS.VAL_ROOT,
-        aug_per_image=cfg.SOLVER.AUG_PER_IMG
-    )
-    _, val_loader, val_num_queries, val_num_classes = make_val_dataset(cfg, val_dataset)
+    _, val_loader, val_num_queries, val_num_classes = make_val_dataset(cfg)
 
     model = PersonReidModule(cfg, val_num_classes, val_num_queries)
     model = model.load_from_checkpoint(cfg.MODEL.PRETRAIN_PATH)

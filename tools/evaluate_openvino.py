@@ -50,12 +50,7 @@ def get_image_label(image_name):
 
 
 def main(cfg):
-    val_dataset = init_dataset(
-        cfg.DATASETS.VAL_NAMES,
-        root=cfg.DATASETS.VAL_ROOT,
-        aug_per_image=cfg.SOLVER.AUG_PER_IMG
-    )
-    _, val_loader, val_num_queries, val_num_classes = make_val_dataset(cfg, val_dataset)
+    _, val_loader, val_num_queries, val_num_classes = make_val_dataset(cfg)
     val_loader.dataset.transform = T.Compose([
         T.Resize(size=cfg.INPUT.SIZE_TRAIN),
         T.Lambda(lambda x: torch.tensor(np.array(x)))

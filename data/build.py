@@ -59,7 +59,7 @@ class REIDDataModule(pl.LightningDataModule):
         return self._val_dataloader
 
 
-def make_val_dataset(cfg, base_dataset):
+def make_val_dataset(cfg, base_dataset=None):
     if cfg.DATASETS.VAL_NAMES is not None:
         CD_dataset = init_dataset(
             cfg.DATASETS.VAL_NAMES,
@@ -67,6 +67,8 @@ def make_val_dataset(cfg, base_dataset):
             aug_per_image=cfg.SOLVER.AUG_PER_IMG
         )
     else:
+        if base_dataset is None:
+            raise RuntimeError("User did not provide validation name nor base_dataset")
         CD_dataset = base_dataset
 
     val_transforms = build_transforms_stage(cfg, is_train=False)
