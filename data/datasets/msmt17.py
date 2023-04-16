@@ -4,9 +4,6 @@
 # @Author  : Hao Luo
 # @File    : msmt17.py
 
-import glob
-import re
-
 import os.path as osp
 
 from .bases import BaseImageDataset
@@ -28,7 +25,7 @@ class MSMT17(BaseImageDataset):
     """
     dataset_dir = 'msmt17'
 
-    def __init__(self,root='/home/haoluo/data', verbose=True, **kwargs):
+    def __init__(self, root='/home/haoluo/data', verbose=True, **kwargs):
         super(MSMT17, self).__init__()
         self.dataset_dir = osp.join(root, self.dataset_dir)
         self.train_dir = osp.join(self.dataset_dir, 'MSMT17_V2/mask_train_v2')
@@ -40,7 +37,7 @@ class MSMT17(BaseImageDataset):
 
         self._check_before_run()
         train = self._process_dir(self.train_dir, self.list_train_path)
-        #val, num_val_pids, num_val_imgs = self._process_dir(self.train_dir, self.list_val_path)
+        # val, num_val_pids, num_val_imgs = self._process_dir(self.train_dir, self.list_val_path)
         query = self._process_dir(self.test_dir, self.list_query_path)
         gallery = self._process_dir(self.test_dir, self.list_gallery_path)
         # TODO: Turn off this line if the situation is not cross-domain
