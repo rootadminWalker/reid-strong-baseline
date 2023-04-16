@@ -2,7 +2,7 @@
 """
 @original_author:  sherlock
 @contact: sherlockliao01@gmail.com
-@pytorch_lightning_revise: rootadminWalker
+@pytorch_lightning_revise: rootadminWalker@github.com
 """
 
 import os
@@ -27,7 +27,6 @@ def train(cfg):
 
     # prepare dataset
     datamodule = make_pl_datamodule(cfg)
-    # datamodule = NewREIDDataModule(cfg)
 
     # Setup callbacks
     warmup_lr = build_warmup_lr(cfg)
