@@ -9,7 +9,7 @@ import os
 
 import pytorch_lightning as pl
 from lightning_fabric.utilities.seed import seed_everything
-from pytorch_lightning.callbacks import LearningRateMonitor, RichProgressBar
+from pytorch_lightning.callbacks import LearningRateMonitor, RichProgressBar, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 
 from data import make_pl_datamodule
@@ -39,6 +39,11 @@ def train(cfg):
     lr_monitor = LearningRateMonitor(
         logging_interval='step'
     )
+    epoch_checkpoint_cb = ModelCheckpoint(
+        dirpath=output_dir,
+        every_n_epochs=cfg.SOLVER.CHECKPOINT_PERIOD,
+        save_top_k=-1
+    )
 
     logger = TensorBoardLogger(
         os.path.join(output_dir, tb_logs_path),
@@ -50,6 +55,7 @@ def train(cfg):
         warmup_lr,
         direct_set_lr,
         lr_monitor,
+        epoch_checkpoint_cb,
         RichProgressBar()
     ]
     if cfg.SOLVER.UNFREEZE_AT_EPOCH is not None:
