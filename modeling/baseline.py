@@ -8,8 +8,8 @@ import torch
 from torch import nn
 
 from utils import weights_init_kaiming
-from .backbones.osnet import osnet_ibn_x1_0
-from .backbones.osnet import osnet_x1_0
+from .backbones.osnet import osnet_x1_0, osnet_ibn_x1_0
+from .backbones.osnet_nas import osnet_nas
 from .backbones.osnet_ain import osnet_ain_x1_0
 from .backbones.resnet import resnet50, resnet101
 from .backbones.resnet_ibn import resnet34_ibn_a, resnet50_ibn_a, resnet101_ibn_a
@@ -26,6 +26,7 @@ MODELS = {
     'osnet_x1_0': osnet_x1_0,
     'osnet_ibn_x1_0': osnet_ibn_x1_0,
     'osnet_ain_x1_0': osnet_ain_x1_0,
+    'osnet_nas': osnet_nas,
 }
 
 
