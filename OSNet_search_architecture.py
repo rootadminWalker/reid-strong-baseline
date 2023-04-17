@@ -33,6 +33,13 @@ def train(cfg):
     # prepare dataset
     datamodule = make_pl_datamodule(cfg)
 
+    # Setup logger
+    logger = TensorBoardLogger(
+        os.path.join(output_dir, tb_logs_path),
+        name="reid-train",
+        version=0
+    )
+
     # Setup callbacks
     warmup_lr = build_warmup_lr(cfg)
     direct_set_lr = build_direct_set_lr(cfg)
@@ -44,11 +51,19 @@ def train(cfg):
         every_n_epochs=cfg.SOLVER.CHECKPOINT_PERIOD,
         save_top_k=-1
     )
-
-    logger = TensorBoardLogger(
-        os.path.join(output_dir, tb_logs_path),
-        name="reid-train",
-        version=0
+    top_mAP_checkpoint_cb = ModelCheckpoint(
+        dirpath=output_dir,
+        save_top_k=1,
+        monitor='mAP',
+        mode='max',
+        filename=cfg.MODEL.NAME + "_best-mAP-{epoch:2d}-{mAP}"
+    )
+    top_rank1_checkpoint_cb = ModelCheckpoint(
+        dirpath=output_dir,
+        save_top_k=1,
+        monitor='rank1',
+        mode='max',
+        filename=cfg.MODEL.NAME + "_best-rank1-{epoch:2d}-{rank1}"
     )
 
     callbacks = [
@@ -56,6 +71,8 @@ def train(cfg):
         direct_set_lr,
         lr_monitor,
         epoch_checkpoint_cb,
+        top_mAP_checkpoint_cb,
+        top_rank1_checkpoint_cb,
         RichProgressBar()
     ]
     if cfg.SOLVER.UNFREEZE_AT_EPOCH is not None:
@@ -84,6 +101,7 @@ def train(cfg):
         logger=logger,
         callbacks=callbacks,
         max_epochs=cfg.SOLVER.MAX_EPOCHS,
+        val_check_interval=cfg.SOLVER.EVAL_INTERVAL,
         num_sanity_val_steps=0,
         strategy=cfg.SOLVER.STRATEGY,
         num_nodes=cfg.SOLVER.NUM_NODES,

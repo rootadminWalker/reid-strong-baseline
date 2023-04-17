@@ -28,6 +28,13 @@ def train(cfg):
     # prepare dataset
     datamodule = make_pl_datamodule(cfg)
 
+    # Setup logger
+    logger = TensorBoardLogger(
+        os.path.join(output_dir, tb_logs_path),
+        name="reid-train",
+        version=0
+    )
+
     # Setup callbacks
     warmup_lr = build_warmup_lr(cfg)
     direct_set_lr = build_direct_set_lr(cfg)
@@ -52,12 +59,6 @@ def train(cfg):
         monitor='rank1',
         mode='max',
         filename=cfg.MODEL.NAME + "_best-rank1-{epoch:2d}-{rank1}"
-    )
-
-    logger = TensorBoardLogger(
-        os.path.join(output_dir, tb_logs_path),
-        name="reid-train",
-        version=0
     )
 
     callbacks = [
