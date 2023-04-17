@@ -1,4 +1,5 @@
 import sys
+from openvino.runtime import Core
 
 import cv2 as cv
 import numpy as np
@@ -17,25 +18,28 @@ from utils import setup_cli, setup_loggers
 class OpenVINOModule(PersonReidModule):
     def __init__(self, cfg, train_num_classes, val_num_queries):
         super(OpenVINOModule, self).__init__(cfg, train_num_classes, val_num_queries)
-        self.net = cv.dnn.readNet(cfg.MODEL.PRETRAIN_PATH.split('.')[0] + '.bin', cfg.MODEL.PRETRAIN_PATH)
+        ie = Core()
 
-    def forward(self, x):
-        blob = cv.dnn.blobFromImage(
-            x,
-            scalefactor=1.0,
-            mean=(0, 0, 0),
-            swapRB=False,
-            crop=False
-        )
-        self.net.setInput(blob)
-        return self.net.forward()
+        net = ie.read_model(model=cfg.MODEL.PRETRAIN_PATH)
+        self.net = ie.compile_model(model=net, device_name='CPU')
+        self.output = self.net.output(0)
+        # self.net = cv.dnn.readNet(cfg.MODEL.PRETRAIN_PATH.split('.')[0] + '.bin', cfg.MODEL.PRETRAIN_PATH)
 
     def validation_step(self, batch, batch_idx):
         data, pids, camids = batch
         data = data.detach().numpy()
         feats = []
         for img in data:
-            feat = self.forward(img)
+            blob = cv.dnn.blobFromImage(
+                img,
+                scalefactor=1.0,
+                mean=(0, 0, 0),
+                swapRB=False,
+                crop=False
+            )
+            # self.net.setInput(blob)
+            # feat = self.net.forward()
+            feat = self.net(inputs=[blob])[self.output]
             feats.append(torch.tensor(feat, device='cuda:0'))
 
         feats = torch.cat(feats)

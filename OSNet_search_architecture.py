@@ -92,7 +92,7 @@ def train(cfg):
     trainer.fit(module, datamodule=datamodule)
 
     print('*** Display the found architecture ***')
-    module.model.build_child_graph()
+    module.model.base.build_child_graph()
 
 
 def main():

@@ -456,7 +456,6 @@ class OSNet(nn.Module):
 
     def __init__(
             self,
-            num_classes,
             blocks,
             layers,
             channels,
@@ -492,13 +491,6 @@ class OSNet(nn.Module):
             blocks[2], layers[2], channels[2], channels[3], search_space
         )
         self.conv5 = Conv1x1(channels[3], channels[3])
-        self.global_avgpool = nn.AdaptiveAvgPool2d(1)
-        # fully connected layer
-        self.fc = self._construct_fc_layer(
-            self.feature_dim, channels[3], dropout_p=None
-        )
-        # identity classification layer
-        self.classifier = nn.Linear(self.feature_dim, num_classes)
 
     def _make_layer(
             self, block, layer, in_channels, out_channels, search_space
@@ -544,7 +536,7 @@ class OSNet(nn.Module):
             block = conv.build_child_graph()
             print('- conv4-{} Block={}'.format(i + 1, block.__name__))
 
-    def featuremaps(self, x, lmda):
+    def forward(self, x, lmda=1.):
         x = self.conv1(x)
         x = self.maxpool(x)
         for conv in self.conv2:
@@ -557,27 +549,26 @@ class OSNet(nn.Module):
             x = conv(x, lmda)
         return self.conv5(x)
 
-    def forward(self, x, lmda=1., return_featuremaps=False):
-        # lmda (float): temperature parameter for concrete distribution
-        x = self.featuremaps(x, lmda)
-        if return_featuremaps:
-            return x
-        v = self.global_avgpool(x)
-        v = v.view(v.size(0), -1)
-        if self.fc is not None:
-            v = self.fc(v)
-        if not self.training:
-            return v
-        return self.classifier(v)
+    # def forward(self, x, lmda=1., return_featuremaps=False):
+    #     # lmda (float): temperature parameter for concrete distribution
+    #     x = self.featuremaps(x, lmda)
+    #     if return_featuremaps:
+    #         return x
+    #     v = self.global_avgpool(x)
+    #     v = v.view(v.size(0), -1)
+    #     if self.fc is not None:
+    #         v = self.fc(v)
+    #     if not self.training:
+    #         return v
+    #     return self.classifier(v)
 
 
 ##########
 # Instantiation
 ##########
-def osnet_nas(num_classes=1000, loss='softmax', **kwargs):
+def osnet_nas(loss='softmax', **kwargs):
     # standard size (width x1.0)
     return OSNet(
-        num_classes,
         blocks=[NASBlock, NASBlock, NASBlock],
         layers=[2, 2, 2],
         channels=[64, 256, 384, 512],
