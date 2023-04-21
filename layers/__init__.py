@@ -5,15 +5,18 @@
 """
 import warnings
 
-from pytorch_metric_learning.losses import CentroidTripletLoss, SubCenterArcFaceLoss
+from pytorch_metric_learning.losses import CentroidTripletLoss
 from pytorch_metric_learning.reducers import MeanReducer
 
 from .GeM import GeneralizedMeanPooling
 from .center_loss import CenterLoss
-from .id_loss import CrossEntropyHead, AMSoftmaxLoss, ArcFace, CurricularFace, CrossEntropyLabelSmooth
+from .id_loss import CrossEntropyHead, AMSoftmaxLoss, ArcFace, CurricularFace, SubCenterArcFace, \
+    SubCenterCurricularFace, \
+    CrossEntropyLabelSmooth
 from .triplet_loss import TripletLoss, EuclideanDistance
 
-d_l = {'am': 0, 'arcface': 1, 'sub-center-arcface': 2, 'curricularface': 3, 'CTL': 4, 'triplet': 5, 'center': 6}
+d_l = {'am': 0, 'arcface': 1, 'sub-center-arcface': 2,
+       'curricularface': 3, 'sub-center-curricularface': 4, 'CTL': 5, 'triplet': 6, 'center': 7}
 
 
 def center_loss(cfg, num_classes, feat_dim):
@@ -35,11 +38,11 @@ def CTL(cfg, num_classes, feat_dim):
     return ctl
 
 
-def id_loss(cfg, num_classes, feat_dim):
+def id_loss(loss_sequences, cfg, num_classes, feat_dim):
     _biasON = cfg.MODEL.NECK != 'bnneck'
     xent = CrossEntropyLabelSmooth(num_classes=num_classes,
                                    epsilon=cfg.SOLVER.ID_EPSILON)
-    if 'am' in cfg.MODEL.METRIC_LOSS_TYPE:
+    if 'am' in loss_sequences:
         classification = AMSoftmaxLoss(
             in_features=feat_dim,
             num_classes=num_classes,
@@ -47,7 +50,7 @@ def id_loss(cfg, num_classes, feat_dim):
             m=cfg.SOLVER.AM_M,
             epsilon=cfg.SOLVER.ID_EPSILON
         )
-    elif 'arcface' in cfg.MODEL.METRIC_LOSS_TYPE:
+    elif 'arcface' in loss_sequences:
         # warnings.warn(f"Loss ArcFace does not support label smooth", UserWarning)
         classification = ArcFace(
             in_features=feat_dim,
@@ -57,16 +60,17 @@ def id_loss(cfg, num_classes, feat_dim):
             epsilon=cfg.SOLVER.ID_EPSILON
         )
         classification.cross_entropy = xent
-    elif 'sub-center-arcface' in cfg.MODEL.METRIC_LOSS_TYPE:
-        warnings.warn(f"Loss Sub-center ArcFace does not support label smooth", UserWarning)
-        classification = SubCenterArcFaceLoss(
-            embedding_size=feat_dim,
-            scale=cfg.SOLVER.AM_S,
-            margin=cfg.SOLVER.AM_M,
-            num_classes=num_classes,
-            sub_centers=cfg.SOLVER.AM_SUB_CENTERS
+    elif 'sub-center-arcface' in loss_sequences:
+        # warnings.warn(f"Loss Sub-center ArcFace does not support label smooth", UserWarning)
+        classification = SubCenterArcFace(
+            in_features=feat_dim,
+            out_features=num_classes,
+            s=cfg.SOLVER.AM_S,
+            m=cfg.SOLVER.AM_M,
+            epsilon=cfg.SOLVER.ID_EPSILON,
+            K=cfg.SOLVER.AM_SUB_CENTERS
         )
-    elif 'curricularface' in cfg.MODEL.METRIC_LOSS_TYPE:
+    elif 'curricularface' in loss_sequences:
         # warnings.warn(f"Loss CurricularFace does not support label smooth", UserWarning)
         classification = CurricularFace(
             in_features=feat_dim,
@@ -74,6 +78,15 @@ def id_loss(cfg, num_classes, feat_dim):
             s=cfg.SOLVER.AM_S,
             m=cfg.SOLVER.AM_M,
             epsilon=cfg.SOLVER.ID_EPSILON
+        )
+    elif 'sub-center-curricularface' in loss_sequences:
+        classification = SubCenterCurricularFace(
+            in_features=feat_dim,
+            out_features=num_classes,
+            s=cfg.SOLVER.AM_S,
+            m=cfg.SOLVER.AM_M,
+            epsilon=cfg.SOLVER.ID_EPSILON,
+            K=cfg.SOLVER.AM_SUB_CENTERS
         )
     else:
         classification = CrossEntropyHead(in_features=feat_dim, num_classes=num_classes,
@@ -108,18 +121,18 @@ def make_loss_with_center(cfg, num_classes):  # modified by gu
     else:
         feat_dim = 2048
 
-    assert check_loss_type_valid(cfg.MODEL.METRIC_LOSS_TYPE), "Wrong loss format"
+    loss_sequences = extract_loss_names(cfg.MODEL.METRIC_LOSS_TYPE)
 
     print("Criterions: ")
     print("-----------------")
-    if 'center' in cfg.MODEL.METRIC_LOSS_TYPE:
+    if 'center' in loss_sequences:
         center_criterion = center_loss(cfg, num_classes, feat_dim).cuda()
-    if 'triplet' in cfg.MODEL.METRIC_LOSS_TYPE:
+    if 'triplet' in loss_sequences:
         triplet = triplet_loss(cfg, num_classes, feat_dim)
-    if 'CTL' in cfg.MODEL.METRIC_LOSS_TYPE:
+    if 'CTL' in loss_sequences:
         ctl = CTL(cfg, num_classes, feat_dim)
 
-    xent = id_loss(cfg, num_classes, feat_dim).cuda()
+    xent = id_loss(loss_sequences, cfg, num_classes, feat_dim).cuda()
     print(xent)
     print("numclasses:", num_classes)
 

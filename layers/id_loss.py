@@ -142,7 +142,7 @@ class ArcFace(nn.Module):
         one_hot.scatter_(1, label.view(-1, 1).long(), 1)
         # -------------torch.where(out_i = {x_i if condition_i else y_i) -------------
         output = (one_hot * phi) + (
-                    (1.0 - one_hot) * cosine)  # you can use torch.where if your torch.__version__ is 0.4
+                (1.0 - one_hot) * cosine)  # you can use torch.where if your torch.__version__ is 0.4
         output *= self.s
         loss = self.cross_entropy(output, label)
         return loss
@@ -155,6 +155,7 @@ class CurricularFace(nn.Module):
 
     Original code by HuangYG123@github.com
     """
+
     def __init__(self, in_features, out_features, s=64., m=0.5, epsilon=0.0):
         super(CurricularFace, self).__init__()
         self.in_features = in_features
@@ -214,15 +215,18 @@ class SubCenterArcFace(ArcFace):
     def __init__(self, in_features, out_features, s=64., m=0.5, epsilon=0.0, easy_margin=False, K=3):
         super(SubCenterArcFace, self).__init__(
             in_features=in_features,
-            out_features=out_features,
+            out_features=out_features * K,
             s=s,
             m=m,
             epsilon=epsilon,
             easy_margin=easy_margin
         )
+        self.out_features = out_features
         self.K = K
         assert self.K > 1, "You should have more than 1 sub-centers in Sub-center ArcFace." \
                            "If you don't want any sub-centers, use ArcFace instead."
+
+        self.cross_entropy = CrossEntropyLabelSmooth(num_classes=self.out_features, epsilon=self.epsilon)
 
     def get_cosine(self, x):
         cosine = super(SubCenterArcFace, self).get_cosine(x)
@@ -235,12 +239,17 @@ class SubCenterCurricularFace(CurricularFace):
     def __init__(self, in_features, out_features, s=64., m=0.5, epsilon=0.0, K=3):
         super(SubCenterCurricularFace, self).__init__(
             in_features=in_features,
-            out_features=out_features,
+            out_features=out_features * K,
             s=s,
             m=m,
             epsilon=epsilon,
         )
+        self.out_features = out_features
         self.K = K
+        assert self.K > 1, "You should have more than 1 sub-centers in Sub-center ArcFace." \
+                           "If you don't want any sub-centers, use ArcFace instead."
+
+        self.cross_entropy = CrossEntropyLabelSmooth(num_classes=self.out_features, epsilon=self.epsilon)
 
     def get_cosine(self, x):
         cos_theta = super(SubCenterCurricularFace, self).get_cosine(x)
