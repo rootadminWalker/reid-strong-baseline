@@ -118,6 +118,8 @@ _C.SOLVER.MAX_EPOCHS = 50
 _C.SOLVER.START_EPOCH = 1
 # Base learning rate
 _C.SOLVER.BASE_LR = 3e-4
+# Minimum learning rate (only for cosine annealing)
+_C.SOLVER.MIN_LR = 3e-6
 # Factor of learning bias
 _C.SOLVER.BIAS_LR_FACTOR = 2
 # Momentum
