@@ -128,7 +128,6 @@ class ArcFace(nn.Module):
 
     def forward(self, x, label):
         # --------------------------- cos(theta) & phi(theta) ---------------------------
-        # cosine = F.linear(F.normalize(x), F.normalize(self.weight))
         cosine = self.get_cosine(x)
         sine = torch.sqrt((1.0 - torch.pow(cosine, 2)).clamp(0, 1))
         phi = cosine * self.cos_m - sine * self.sin_m
@@ -137,7 +136,6 @@ class ArcFace(nn.Module):
         else:
             phi = torch.where(cosine > self.th, phi, cosine - self.mm)
         # --------------------------- convert label to one-hot ---------------------------
-        # one_hot = torch.zeros(cosine.size(), requires_grad=True, device='cuda')
         one_hot = torch.zeros(cosine.size(), device='cuda')
         one_hot.scatter_(1, label.view(-1, 1).long(), 1)
         # -------------torch.where(out_i = {x_i if condition_i else y_i) -------------
@@ -188,10 +186,6 @@ class CurricularFace(nn.Module):
         return cos_theta
 
     def forward(self, x, label):
-        # x = self.l2_norm(x, axis=1)
-        # kernel_norm = self.l2_norm(self.kernel, axis=0)
-        # cos_theta = torch.mm(x, kernel_norm)
-        # cos_theta = cos_theta.clamp(-1, 1)  # for numerical stability
         cos_theta = self.get_cosine(x)
         target_logit = cos_theta[torch.arange(0, x.size(0)), label].view(-1, 1)
 
