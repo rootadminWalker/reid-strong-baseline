@@ -114,8 +114,6 @@ _C.SOLVER.NUM_NODES = 1
 _C.SOLVER.OPTIMIZER_NAME = "Adam"
 # Number of max epoches
 _C.SOLVER.MAX_EPOCHS = 50
-# Start Epoch of the Model
-_C.SOLVER.START_EPOCH = 1
 # Base learning rate
 _C.SOLVER.BASE_LR = 3e-4
 # Minimum learning rate (only for cosine annealing)
