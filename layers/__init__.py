@@ -14,9 +14,10 @@ from .id_loss import CrossEntropyHead, AMSoftmaxLoss, ArcFace, CurricularFace, S
     SubCenterCurricularFace, \
     CrossEntropyLabelSmooth
 from .triplet_loss import TripletLoss, EuclideanDistance
+from .ranked_list_loss import RankedLoss
 
 d_l = {'am': 0, 'arcface': 1, 'sub-center-arcface': 2,
-       'curricularface': 3, 'sub-center-curricularface': 4, 'CTL': 5, 'triplet': 6, 'center': 7}
+       'curricularface': 3, 'sub-center-curricularface': 4, 'CTL': 5, 'triplet': 6, 'ranked-list': 7, 'center': 8}
 
 
 def center_loss(cfg, num_classes, feat_dim):
@@ -128,7 +129,13 @@ def make_loss_with_center(cfg, num_classes):  # modified by gu
     if 'center' in loss_sequences:
         center_criterion = center_loss(cfg, num_classes, feat_dim).cuda()
     if 'triplet' in loss_sequences:
-        triplet = triplet_loss(cfg, num_classes, feat_dim)
+        contrastive = triplet_loss(cfg, num_classes, feat_dim)
+    if 'ranked' in loss_sequences:
+        contrastive = RankedLoss(
+            margin=cfg.SOLVER.MARGIN,
+            alpha=cfg.SOLVER.RANKED_ALPHA,
+            tval=cfg.SOLVER.RANKED_TVAL
+        )
     if 'CTL' in loss_sequences:
         ctl = CTL(cfg, num_classes, feat_dim)
 
@@ -144,16 +151,20 @@ def make_loss_with_center(cfg, num_classes):  # modified by gu
         loss_components['classification'] = loss_classification
         loss_total = loss_center + loss_classification
 
-        if 'triplet' in cfg.MODEL.METRIC_LOSS_TYPE:
-            loss_triplet, dist_ap, dist_an = triplet(global_feat, targets)
+        if 'triplet' in loss_sequences:
+            loss_triplet, dist_ap, dist_an = cfg.SOLVER.CONTRASTIVE_LOSS_WEIGHT * contrastive(global_feat, targets)
             loss_components['triplet'] = loss_triplet
             loss_components['dist_ap'] = dist_ap.detach().mean()
             loss_components['dist_an'] = dist_an.detach().mean()
             loss_total += loss_triplet
-        if 'CTL' in cfg.MODEL.METRIC_LOSS_TYPE:
+        if 'CTL' in loss_sequences:
             loss_ctl = ctl(global_feat, targets)
             loss_components['CTL'] = loss_ctl
             loss_total += loss_ctl
+        if 'ranked-list' in loss_sequences:
+            loss_ranked_list = cfg.SOLVER.CONTRASTIVE_LOSS_WEIGHT * contrastive(global_feat, targets)
+            loss_components['ranked_list'] = loss_ranked_list
+            loss_total += loss_ranked_list
         # else:
         #     raise ValueError('expected METRIC_LOSS_TYPE with center should be center, triplet_center'
         #                      'but got {}'.format(cfg.MODEL.METRIC_LOSS_TYPE))

@@ -73,51 +73,19 @@ def rank_loss(dist_mat, labels, margin, alpha, tval):
     return total_loss
 
 
-class RankedLoss(object):
+class RankedLoss(nn.Module):
     "Ranked_List_Loss_for_Deep_Metric_Learning_CVPR_2019_paper"
 
     def __init__(self, margin=None, alpha=None, tval=None):
+        super(RankedLoss, self).__init__()
         self.margin = margin
         self.alpha = alpha
         self.tval = tval
 
-    def __call__(self, global_feat, labels, normalize_feature=True):
+    def forward(self, global_feat, labels, normalize_feature=True):
         if normalize_feature:
             global_feat = normalize_rank(global_feat, axis=-1)
         dist_mat = euclidean_dist_rank(global_feat, global_feat)
         total_loss = rank_loss(dist_mat, labels, self.margin, self.alpha, self.tval)
 
         return total_loss
-
-
-class CrossEntropyLabelSmooth(nn.Module):
-    """Cross entropy loss with label smoothing regularizer.
-
-    Reference:
-    Szegedy et al. Rethinking the Inception Architecture for Computer Vision. CVPR 2016.
-    Equation: y = (1 - epsilon) * y + epsilon / K.
-
-    Args:
-        num_classes (int): number of classes.
-        epsilon (float): weight.
-    """
-
-    def __init__(self, num_classes, epsilon=0.1, use_gpu=True):
-        super(CrossEntropyLabelSmooth, self).__init__()
-        self.num_classes = num_classes
-        self.epsilon = epsilon
-        self.use_gpu = use_gpu
-        self.logsoftmax = nn.LogSoftmax(dim=1)
-
-    def forward(self, inputs, targets):
-        """
-        Args:
-            inputs: prediction matrix (before softmax) with shape (batch_size, num_classes)
-            targets: ground truth labels with shape (num_classes)
-        """
-        log_probs = self.logsoftmax(inputs)
-        targets = torch.zeros(log_probs.size()).scatter_(1, targets.unsqueeze(1).data.cpu(), 1)
-        if self.use_gpu: targets = targets.cuda()
-        targets = (1 - self.epsilon) * targets + self.epsilon / self.num_classes
-        loss = (- targets * log_probs).mean(0).sum()
-        return loss

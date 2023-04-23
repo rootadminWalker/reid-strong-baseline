@@ -126,21 +126,12 @@ _C.SOLVER.MOMENTUM = 0.9
 _C.SOLVER.MARGIN = 0.3
 # Epsilon of the ID loss
 _C.SOLVER.ID_EPSILON = 0.1
-# Margin of Centroid Triplet Loss
-# _C.SOLVER.CTL_MARGIN = 0.05
-# Margin of cluster ;pss
-_C.SOLVER.CLUSTER_MARGIN = 0.3
 # Learning rate of SGD to learn the centers of center loss
 _C.SOLVER.CENTER_LR = 0.5
-# Balanced weight of center loss
-_C.SOLVER.CENTER_LOSS_WEIGHT = 0.0005
+# Balanced weight of each loss
 _C.SOLVER.CLASSIFICATION_LOSS_WEIGHT = 1.
-# Settings of range loss
-# _C.SOLVER.RANGE_K = 2
-# _C.SOLVER.RANGE_MARGIN = 0.3
-# _C.SOLVER.RANGE_ALPHA = 0
-# _C.SOLVER.RANGE_BETA = 1
-# _C.SOLVER.RANGE_LOSS_WEIGHT = 1
+_C.SOLVER.CENTER_LOSS_WEIGHT = 0.0005
+_C.SOLVER.CONTRASTIVE_LOSS_WEIGHT = 1.
 
 # Settings of weight decay
 _C.SOLVER.WEIGHT_DECAY = 0.0005
@@ -201,6 +192,10 @@ _C.SOLVER.AUG_PER_IMG = 0
 
 # Fine tune unfreeze epoch
 _C.SOLVER.UNFREEZE_AT_EPOCH = None
+
+# Hyperparameters for Ranked list loss
+_C.SOLVER.RANKED_ALPHA = 2.0
+_C.SOLVER.RANKED_TVAL = 1.0
 
 # This is global, so if we have 8 GPUs and IMS_PER_BATCH = 16, each GPU will
 # see 2 images per batch
