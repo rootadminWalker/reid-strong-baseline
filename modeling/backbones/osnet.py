@@ -333,13 +333,6 @@ class OSNet(nn.Module):
             reduce_spatial_size=False
         )
         self.conv5 = Conv1x1(channels[3], channels[3])
-        self.global_avgpool = nn.AdaptiveAvgPool2d(1)
-        # fully connected layer
-        self.fc = self._construct_fc_layer(
-            self.feature_dim, channels[3], dropout_p=None
-        )
-        # identity classification layer
-        self.classifier = nn.Linear(self.feature_dim, num_classes)
 
         self._init_params()
 
@@ -368,27 +361,6 @@ class OSNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def _construct_fc_layer(self, fc_dims, input_dim, dropout_p=None):
-        if fc_dims is None or fc_dims < 0:
-            self.feature_dim = input_dim
-            return None
-
-        if isinstance(fc_dims, int):
-            fc_dims = [fc_dims]
-
-        layers = []
-        for dim in fc_dims:
-            layers.append(nn.Linear(input_dim, dim))
-            layers.append(nn.BatchNorm1d(dim))
-            layers.append(nn.ReLU(inplace=True))
-            if dropout_p is not None:
-                layers.append(nn.Dropout(p=dropout_p))
-            input_dim = dim
-
-        self.feature_dim = fc_dims[-1]
-
-        return nn.Sequential(*layers)
-
     def _init_params(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -411,7 +383,7 @@ class OSNet(nn.Module):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
 
-    def featuremaps(self, x):
+    def forward(self, x):
         x = self.conv1(x)
         x = self.maxpool(x)
         x = self.conv2(x)
@@ -419,24 +391,6 @@ class OSNet(nn.Module):
         x = self.conv4(x)
         x = self.conv5(x)
         return x
-
-    def forward(self, x, return_featuremaps=False):
-        x = self.featuremaps(x)
-        if return_featuremaps:
-            return x
-        v = self.global_avgpool(x)
-        v = v.view(v.size(0), -1)
-        if self.fc is not None:
-            v = self.fc(v)
-        if not self.training:
-            return v
-        y = self.classifier(v)
-        if self.loss == 'softmax':
-            return y
-        elif self.loss == 'triplet':
-            return y, v
-        else:
-            raise KeyError("Unsupported loss: {}".format(self.loss))
 
 
 def init_pretrained_weights(model, key=''):
