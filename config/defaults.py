@@ -194,7 +194,7 @@ _C.SOLVER.AUG_PER_IMG = 0
 _C.SOLVER.UNFREEZE_AT_EPOCH = None
 
 # Hyperparameters for Ranked list loss
-_C.SOLVER.RANKED_ALPHA = 2.0
+_C.SOLVER.RANKED_ALPHA = 2.0  # R = ALPHA - MARGIN_RANK
 _C.SOLVER.RANKED_TVAL = 1.0
 
 # This is global, so if we have 8 GPUs and IMS_PER_BATCH = 16, each GPU will

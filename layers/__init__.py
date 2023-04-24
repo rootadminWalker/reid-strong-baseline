@@ -153,8 +153,8 @@ def make_loss_with_center(cfg, num_classes):  # modified by gu
         loss_total = loss_center + loss_classification
 
         if 'triplet' in loss_sequences:
-            loss_triplet, dist_ap, dist_an = cfg.SOLVER.CONTRASTIVE_LOSS_WEIGHT * contrastive(global_feat, targets)
-            loss_components['triplet'] = loss_triplet
+            loss_triplet, dist_ap, dist_an = contrastive(global_feat, targets)
+            loss_components['triplet'] = cfg.SOLVER.CONTRASTIVE_LOSS_WEIGHT * loss_triplet
             loss_components['dist_ap'] = dist_ap.detach().mean()
             loss_components['dist_an'] = dist_an.detach().mean()
             loss_total += loss_triplet
