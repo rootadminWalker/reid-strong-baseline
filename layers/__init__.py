@@ -130,12 +130,13 @@ def make_loss_with_center(cfg, num_classes):  # modified by gu
         center_criterion = center_loss(cfg, num_classes, feat_dim).cuda()
     if 'triplet' in loss_sequences:
         contrastive = triplet_loss(cfg, num_classes, feat_dim)
-    if 'ranked' in loss_sequences:
+    if 'ranked-list' in loss_sequences:
         contrastive = RankedLoss(
             margin=cfg.SOLVER.MARGIN,
             alpha=cfg.SOLVER.RANKED_ALPHA,
             tval=cfg.SOLVER.RANKED_TVAL
         )
+        print(contrastive)
     if 'CTL' in loss_sequences:
         ctl = CTL(cfg, num_classes, feat_dim)
 
