@@ -122,7 +122,7 @@ _C.SOLVER.MIN_LR = 3e-6
 _C.SOLVER.BIAS_LR_FACTOR = 2
 # Momentum
 _C.SOLVER.MOMENTUM = 0.9
-# Margin of triplet loss
+# Margin of contrastive loss
 _C.SOLVER.MARGIN = 0.3
 # Epsilon of the ID loss
 _C.SOLVER.ID_EPSILON = 0.1
