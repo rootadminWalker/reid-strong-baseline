@@ -52,15 +52,11 @@ class Baseline(nn.Module):
             self.bottleneck.apply(weights_init_kaiming)
         elif self.neck == 'GeM':
             self.pooling = GeneralizedMeanPooling(p=3, eps=1e-6)
-            linear = nn.Linear(in_features=self.in_planes, out_features=self.in_planes)
             bn = nn.BatchNorm1d(self.in_planes)
-            # bn.bias.requires_grad_(False)  # no shift
+            bn.apply(weights_init_kaiming)
             PReLU = nn.PReLU()
 
-            bn.apply(weights_init_kaiming)
-            linear.apply(weights_init_kaiming)
-
-            self.bottleneck = nn.Sequential(linear, bn, PReLU)
+            self.bottleneck = nn.Sequential(bn, PReLU)
 
     @staticmethod
     def __get_in_planes(model_name):
