@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+"""
+@original_author:  sherlock
+@contact: sherlockliao01@gmail.com
+@pytorch_lightning_revise: rootadminWalker@github.com
+"""
+
+import os
+
+import pytorch_lightning as pl
+from lightning_fabric.utilities.seed import seed_everything
+from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor, RichProgressBar
+from pytorch_lightning.loggers import TensorBoardLogger
+
+from data import make_pl_datamodule
+from engine.reid_module import PersonReidModule
+from solver import build_warmup_lr, build_direct_set_lr, build_fine_tune
+from utils import setup_cli
+
+
+def train(cfg):
+    if cfg.RANDOM_SEED is not None:
+        seed_everything(cfg.RANDOM_SEED)
+
+    output_dir = cfg.OUTPUT_DIR
+    tb_logs_path = cfg.TB_LOG_DIR
+
+    # prepare dataset
+    datamodule = make_pl_datamodule(cfg)
+
+    # Setup logger
+    logger = TensorBoardLogger(
+        os.path.join(output_dir, tb_logs_path),
+        name="reid-train",
+        version=0
+    )
+
+    # Setup callbacks
+    lr_monitor = LearningRateMonitor(
+        logging_interval='step'
+    )
+
+    callbacks = [
+        lr_monitor,
+        RichProgressBar()
+    ]
+
+    module = PersonReidModule(
+        cfg=cfg,
+        train_num_classes=datamodule.train_num_classes,
+        val_num_queries=datamodule.val_num_queries
+    )
+    trainer = pl.Trainer(
+        accelerator=cfg.MODEL.DEVICE,
+        devices=list(map(int, cfg.MODEL.DEVICE_ID)),
+        benchmark=True,
+        logger=logger,
+        callbacks=callbacks,
+        max_epochs=cfg.SOLVER.MAX_EPOCHS,
+        val_check_interval=cfg.SOLVER.EVAL_INTERVAL,
+        num_sanity_val_steps=0,
+        strategy=cfg.SOLVER.STRATEGY,
+        num_nodes=cfg.SOLVER.NUM_NODES,
+        reload_dataloaders_every_n_epochs=1
+    )
+    trainer.fit(module, datamodule=datamodule, ckpt_path=checkpoint_path)
+
+
+def main():
+    cfg, args = setup_cli()
+    print(cfg)
+    train(cfg)
+
+
+if __name__ == '__main__':
+    main()
+
